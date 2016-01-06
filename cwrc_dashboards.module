@@ -1,0 +1,345 @@
+<?php
+/**
+ * @file
+ * Code for the CWRC Dashboards feature.
+ */
+
+include_once 'cwrc_dashboards.features.inc';
+
+/**
+ * Implements hook_menu().
+ */
+function cwrc_dashboards_menu() {
+  // User dashboard.
+  $items['user/%user/dashboard'] = array(
+    'title' => 'My Dashboard',
+    'page callback' => 'cwrc_dashboards_user_dashboard',
+    'page arguments' => array(1),
+    'access arguments' => array(1, 'access user dashboard'),
+    'access callback' => 'cwrc_dashboards_user_dashboard_access',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'includes/cwrc_dashboards.pages.inc',
+    'weight' => -10
+  );
+
+  // Project dashboard.
+  $items['node/%node/dashboard'] = array(
+    'title' => 'Project Dashboard',
+    'page callback' => 'cwrc_dashboards_project_dashboard',
+    'page arguments' => array(1),
+    'access arguments' => array('access project dashboard', 'node', 1),
+    'access callback' => 'og_user_access_entity',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'includes/cwrc_dashboards.pages.inc',
+    'weight' => -10
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function cwrc_dashboards_theme($existing, $type, $theme, $path) {
+  return array(
+    'cwrc_dashboards_user_bookmark_lists_block' => array(
+      'template' => 'templates/cwrc-dashboards-user-bookmark-lists-block',
+      'variables' => array('owned' => array(), 'shared' => array()),
+    ),
+    'cwrc_dashboards_workflow_reports_block' => array(
+      'template' => 'templates/cwrc-dashboards-workflow-reports-block',
+      'variables' => array('reports' => array(), 'admin_access' => false),
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function cwrc_dashboards_block_info() {
+  // User dashboard blocks.
+  $blocks['user_privatemsg'] = array(
+    'info' => t('CWRC "Private Messgaes" User Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  $blocks['user_assigned_to_me'] = array(
+    'info' => t('CWRC "Assigned to Me" User Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  $blocks['user_recently_edited'] = array(
+    'info' => t('CWRC "Recently Edited Objects" User Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  $blocks['user_bookmark_lists'] = array(
+    'info' => t('CWRC "Bookmark Lists" User Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  $blocks['user_workflow_reports'] = array(
+    'info' => t('CWRC "Workflow Reports" User Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+
+  // Project dashboard blocks.
+  $blocks['project_recently_edited'] = array(
+    'info' => t('CWRC "Recently Edited Objects" Project Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  $blocks['project_utilities'] = array(
+    'info' => t('CWRC "Utilities" Project Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $blocks['project_workflow_reports'] = array(
+    'info' => t('CWRC "Workflow Reports" Project Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  $blocks['project_locked_objects'] = array(
+    'info' => t('CWRC "Workflow Reports" Project Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function cwrc_dashboards_block_view($delta = '') {
+  // load the blocks include
+  module_load_include('inc', 'cwrc_dashboards', 'includes/cwrc_dashboards.blocks');
+  $block = array();
+
+  switch ($delta) {
+    case 'user_privatemsg':
+      $block['subject'] = t('Private Messages');
+      $block['content'] = cwrc_dashboards_user_privatemsg_block();
+      break;
+    case 'user_assigned_to_me':
+      $block['subject'] = t('Assigned to Me');
+      $block['content'] = cwrc_dashboards_user_assigned_to_me_block();
+      break;
+    case 'user_recently_edited':
+      $block['subject'] = t('Recently Edited Objects');
+      $block['content'] = cwrc_dashboards_user_recently_edited_block();
+      break;
+    case 'user_bookmark_lists':
+      $block['subject'] = t('Bookmark Lists');
+      $block['content'] = cwrc_dashboards_user_bookmark_lists_block();
+      break;
+    case 'user_workflow_reports':
+      $block['subject'] = t('Workflow Reports');
+      $block['content'] = cwrc_dashboards_user_workflow_reports_block();
+      break;
+
+    case 'project_recently_edited':
+      $block['subject'] = t('Recently Edited Objects');
+      $block['content'] = cwrc_dashboards_project_recently_edited_block();
+      break;
+    case 'project_utilities':
+      $block['subject'] = t('Utilities');
+      $block['content'] = cwrc_dashboards_project_utilities_block();
+      break;
+    case 'project_workflow_reports':
+      $block['subject'] = t('Workflow Reports');
+      $block['content'] = cwrc_dashboards_project_workflow_reports_block();
+      break;
+    case 'project_locked_objects':
+      $block['subject'] = t('Locked objects');
+      $block['content'] = drupal_get_form('cwrc_dashboards_project_locked_objects_block_form');
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cwrc_dashboards_permission() {
+  return array(
+    'access user dashboard' =>  array(
+      'title' => t('Access user dashboard'),
+      'description' => t('Allows the user to access their personal dashboard.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_og_permission().
+ *
+ * Provides og permission for project dashboard.
+ */
+function cwrc_dashboards_og_permission() {
+  return array(
+    'access project dashboard' => array(
+      'title' => t('Access project dashboard'),
+      'description' => t("Allow users to access the project admin dashboard (does not guarantee all functionality will be available)."),
+
+      // Determine to which roles the permissions will be enabled by default.
+      'default role' => array(OG_ADMINISTRATOR_ROLE),
+    ),
+  );
+}
+
+/**
+ * Access callback for user dashboard.
+ */
+function cwrc_dashboards_user_dashboard_access($account, $perm) {
+  global $user;
+
+  // this is only available to the current user
+  if ($user->uid != $account->uid) {
+    return false;
+  }
+
+  // pass to standard access check
+  return user_access($perm);
+}
+
+/**
+ * Implements hook_block_view_alter().
+ *
+ * Adds a little more information to the "Who's online" block title for
+ * convenience.
+ */
+function cwrc_dashboards_block_view_alter(&$data, $block) {
+  if ($block->module == 'user' && $block->delta == 'online') {
+    // Count users active within the defined period.
+    $interval = REQUEST_TIME - variable_get('user_block_seconds_online', 900);
+
+    // Perform database queries to gather online user lists. We use s.timestamp
+    // rather than u.access because it is much faster.
+    $authenticated_count = db_query("SELECT COUNT(DISTINCT s.uid) FROM {sessions} s WHERE s.timestamp >= :timestamp AND s.uid > 0", array(':timestamp' => $interval))->fetchField();
+    $data['subject'] = $data['subject'] . ' <span class="badge">' . $authenticated_count . '</span>';
+  }
+}
+
+/**
+ * Implements hook_views_bulk_operations_form_alter().
+ *
+ * Moves the operations buttons below the views output and adds a link to add
+ * membership form.  Also adds an "Add new member" link above the output.
+ */
+function cwrc_dashboards_views_bulk_operations_form_alter(&$form, &$form_state, $vbo) {
+  if (($form['#form_id'] == 'views_form_project_members_block'
+    || $form['#form_id'] == 'views_form_pending_applications_block')
+    && isset($form['output'])) {
+
+    $form['output']['#weight'] = -99;
+
+    if ($form['#form_id'] == 'views_form_project_members_block') {
+      // Check for a group node from the menu.
+      $node = menu_get_object();
+      if ($node === NULL || !og_is_group('node', $node->nid)) {
+        // Not a group.
+        return;
+      }
+
+      // Check for access to add a new user and render link.
+      $nid = $node->nid;
+      if (og_user_access('node', $nid, 'add user')) {
+        $form['add_member'] = array(
+          '#markup' => l(t('Add new member'), "group/node/$nid/admin/people/add-user"),
+          '#weight' => -100,
+          '#prefix' => '<div class="cwrc-dashboards-new-member-link-wrapper">',
+          '#suffix' => '</div>',
+        );
+      }
+
+      // Send this to the admin panel instead
+      $form['#action'] = '/group/node/' . $nid . '/admin/people';
+      $form_id = 'views_form_og_members_admin_default';
+      _cwrc_dashboards_modify_form_id($form, $form_id);
+
+    }
+    elseif ($form['#form_id'] == 'views_form_pending_applications_block') {
+      // Send pending applications changes to the admin panel
+      $node = menu_get_object();
+      if ($node === NULL || !og_is_group('node', $node->nid)) {
+        return;
+      }
+
+      $form['#action'] = '/group/node/' . $node->nid . '/admin/people';
+      $form_id = 'views_form_og_members_admin_default';
+      _cwrc_dashboards_modify_form_id($form, $form_id);
+
+    }
+  }
+  elseif ($form['#form_id'] == 'views_form_og_members_admin_default') {
+    if (strpos($form['#action'], "/node/") === 0) {
+      // Update to redirect to the admin panel
+      $arr = explode("/", $form['#action']);
+      if (count($arr) == 4) {
+        $form['#action'] = '/group/node/' . $arr[2] . '/admin/people';
+      }
+    }
+  }
+}
+
+function _cwrc_dashboards_modify_form_id(&$form, $form_id) {
+  $form['#form_id'] = $form_id;
+  $form['form_id']['#value'] = $form_id;
+  $form['#token'] = $form_id;
+  $form['form_token'] = array(
+      '#id' => drupal_html_id('edit-' . $form_id . '-form-token'),
+      '#type' => 'token',
+      '#default_value' => drupal_get_token($form['#token']),
+      '#parents' => array('form_token'),
+  );
+}
+
+/**
+ * Submit handler for locked objects form, see:
+ * includes/cwrc_dashboards.blocks.inc
+ */
+function cwrc_dashboards_project_locked_objects_block_form_submit($form, &$form_state) {
+  $batch = array(
+    'operations' => array(),
+    'finished' => 'cwrc_dashboards_locked_objects_batch_finished',
+    'title' => t('Processing unlock objects'),
+    'init_message' => t('Starting...'),
+    'progress_message' => t('Processed @current out of @total.'),
+  );
+
+  foreach ($form_state['values']['objects'] as $pid => $value) {
+    // Add selected items to batch.
+    if (!empty($value)) {
+      $batch['operations'][] = array('islandora_object_lock_remove_object_lock', array($pid));
+    }
+  }
+
+  // run the batch
+  batch_set($batch);
+}
+
+/**
+ * Batch finished callback.
+ */
+function cwrc_dashboards_locked_objects_batch_finished($success, $results, $operations) {
+  // Force solr to commit things so that locks show as released on form.
+  $url = variable_get('islandora_solr_url', 'localhost:8080/solr') . '/update';
+  $ch = curl_init();
+  curl_setopt($ch,CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_POST, 1);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, "<commit/>" );
+  curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/xml'));
+  $result = curl_exec($ch);
+  curl_close($ch);
+
+  // Set a message warning about possible reasons this didn't work...
+  drupal_set_message(t('Unlocked as many objects as possible, if an object didn\'t unlock properly you may not have access to unock it.'));
+}
+
+function cwrc_dashboards_get_solarium() {
+  $solarium =& drupal_static(__FUNCTION__);
+
+  if ($solarium === NULL) {
+    $config = array(
+      'endpoint' => array(
+        'localhost' => array_merge(parse_url(variable_get('islandora_solr_url', 'localhost:8080/solr')), array('host' => '127.0.0.1')),
+      ),
+    );
+
+    $solarium = new Solarium\Client($config);
+  }
+
+  return $solarium;
+}
