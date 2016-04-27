@@ -29,12 +29,12 @@ function cwrc_dashboards_user_privatemsg_block() {
       '#rows' => array(),
       '#header' => array(
         t('Subject'),
-        t('From'),
+        t('Participants'),
         t('Received on'),
       ),
     ),
     'link' => array(
-      '#markup' => '<span class="view-all-messages">' . l(t('View all messages'), 'user/' . $user->uid . '/messages') . '</a></span>',
+      '#markup' => '<span class="view-all-messages">' . l(t('View all messages'), 'messages') . '</a></span>',
     ),
     'new-link' => array(
       '#markup' => '<span class="compose-new-message">' . l(t('New message'), 'messages/new') . '</a></span>',
@@ -50,17 +50,26 @@ function cwrc_dashboards_user_privatemsg_block() {
     foreach ($participants as $participant) {
       if ($participant->recipient != $user->uid) {
         $account = user_load($participant->recipient);
-        $participant_output[] = l(realname_load($account), 'user/' . $participant->recipient);
+
+        if ($account != null && isset($account->uid)) {
+          $name = realname_load($account);
+        } else {
+          $name = t("a user");
+        }
+
+        $participant_output[] = l($name, 'user/' . $participant->recipient);
       }
     }
 
     // Build the rows.
+    if ($thread->last_updated != null && $thread->last_updated != false) $date = format_date(intval($thread->last_updated));
+    else $date = "";
     $build['table']['#rows'][] = array(
       'class' => ($thread->is_new) ? array('is-new') : array(),
       'data' => array(
         l(filter_xss(decode_entities($thread->subject), array()), 'messages/view/' . $thread->thread_id),
         implode(', ', $participant_output),
-        format_date($thread->last_updated),
+        $date,
       ),
     );
   }
@@ -81,7 +90,8 @@ function cwrc_dashboards_user_assigned_to_me_block() {
 
   // Build select query for assigned to me block.
   $query = $client->createSelect();
-  $query->setQuery('workflow_assigned_message_recipient_userID_current_ms:(' . $user->name . ')')
+  $helper = $query->getHelper();
+  $query->setQuery('workflow_assigned_message_recipient_userID_current_ms:(' . $helper->escapePhrase($user->name) . ')')
     ->setFields(array(
       "PID",
       "fgs_label_s",
@@ -90,9 +100,9 @@ function cwrc_dashboards_user_assigned_to_me_block() {
       "ancestors_ms",
       "workflow_userID_current_ms",
       "workflow_activity_category_current_ms",
-      "workflow_activity_stamp_current_ms",
       "workflow_date_current_dt",
-      "workflow_activity_note_current_ms",
+      "workflow_assigned_category_current_ms",
+      "workflow_assigned_note_current_ms",
     ))
     ->addSort('workflow_date_current_dt', $query::SORT_DESC);
 
@@ -114,7 +124,7 @@ function cwrc_dashboards_user_assigned_to_me_block() {
       '',
       t('Time assigned'),
       t('Assigned by'),
-      t('Stamp'),
+      t('Category'),
       t('Note'),
     ),
   );
@@ -124,7 +134,11 @@ function cwrc_dashboards_user_assigned_to_me_block() {
     // Determine lock status.
     // TODO: This is ugly, make a helper.
     if (isset($document['RELS_EXT_lock-expiry_literal_s'])) {
-      $lock_expiry = new DateTime($document['RELS_EXT_lock-expiry_literal_s']);
+      if ($document['RELS_EXT_lock-expiry_literal_s'] == 'indefinite') {
+        $lock_expiry = new DateTime('+1 HOUR');
+      } else {
+        $lock_expiry = new DateTime($document['RELS_EXT_lock-expiry_literal_s']);
+      }
       $now = new DateTime();
       if ($lock_expiry > $now) {
         if ($document['RELS_EXT_locked-by_literal_s'] == $user->name) {
@@ -169,7 +183,17 @@ function cwrc_dashboards_user_assigned_to_me_block() {
     // Get the user who assigned this work.
     $assigned_by = user_load_by_name($document['workflow_userID_current_ms'][0]);
 
+    if ($assigned_by != null && isset($assigned_by->uid)) {
+      $assigned_by_name = realname_load($assigned_by);
+    } else {
+      $assigned_by_name = t("a user");
+    }
+
     // Build the row.
+    $time = strtotime($document['workflow_date_current_dt']);
+    if ($time != null && $time != false) $date = format_date(intval($time));
+    else $date = "";
+
     $build['#rows'][] = array(
       // Add a class for workflow stamp styling.
       'class' => array('cwrc-workflow-' . $document['workflow_activity_category_current_ms'][0]),
@@ -202,13 +226,17 @@ function cwrc_dashboards_user_assigned_to_me_block() {
         ),
 
         // Time assigned, assigned by and stamp.
-        (isset($document['workflow_date_current_dt']) ? format_date(strtotime($document['workflow_date_current_dt'])) : ''),
-        l(realname_load($assigned_by), 'user/' . $assigned_by->uid),
-        $document['workflow_activity_stamp_current_ms'][0],
-        $document['workflow_activity_note_current_ms'][0],
+        (isset($document['workflow_date_current_dt']) ? $date : ''),
+        l($assigned_by_name, 'user/' . $assigned_by->uid),
+        $document['workflow_assigned_category_current_ms'][0],
+        $document['workflow_assigned_note_current_ms'][0],
       ),
     );
   }
+
+  // Add class flagging this as a "read more" candidate.
+  $build['#attributes']['class'][] = 'read-more';
+  $build['#attached']['js'][] = drupal_get_path('module', 'cwrc_dashboards') . '/js/read-more.js';
 
   // Return render array.
   return $build;
@@ -229,7 +257,8 @@ function cwrc_dashboards_user_recently_edited_block() {
 
   // Build select query for assigned to me block.
   $query = $client->createSelect();
-  $query->setQuery('workflow_userID_current_ms:(' . $user->name . ')')
+  $helper = $query->getHelper();
+  $query->setQuery('workflow_userID_current_ms:(' . $helper->escapePhrase($user->name) . ')')
     ->setFields(array(
       "PID",
       "fgs_label_s",
@@ -242,7 +271,7 @@ function cwrc_dashboards_user_recently_edited_block() {
       "workflow_activity_status_current_ms",
     ))
     ->addSort('workflow_date_current_dt', $query::SORT_DESC)
-    ->setRows(5);
+    ->setRows(100);
 
   // Get query results.
   $results = $client->select($query);
@@ -272,7 +301,11 @@ function cwrc_dashboards_user_recently_edited_block() {
     // Determine lock status.
     // TODO: This is ugly, make a helper.
     if (isset($document['RELS_EXT_lock-expiry_literal_s'])) {
-      $lock_expiry = new DateTime($document['RELS_EXT_lock-expiry_literal_s']);
+      if ($document['RELS_EXT_lock-expiry_literal_s'] == 'indefinite') {
+        $lock_expiry = new DateTime('+1 HOUR');
+      } else {
+        $lock_expiry = new DateTime($document['RELS_EXT_lock-expiry_literal_s']);
+      }
       $now = new DateTime();
       if ($lock_expiry > $now) {
         if ($document['RELS_EXT_locked-by_literal_s'] == $user->name) {
@@ -315,6 +348,10 @@ function cwrc_dashboards_user_recently_edited_block() {
     }
 
     // Build the row.
+    $time = strtotime($document['workflow_date_current_dt']);
+    if ($time != null && $time != false) $date = format_date(intval($time));
+    else $date = "";
+
     $build['#rows'][] = array(
       // Add a class for workflow stamp styling.
       'class' => array('cwrc-workflow-' . $document['workflow_activity_category_current_ms'][0]),
@@ -347,13 +384,17 @@ function cwrc_dashboards_user_recently_edited_block() {
         ),
 
         // Assigned, project, time changed, stamp and category
-        (isset($document['workflow_date_current_dt']) ? format_date(strtotime($document['workflow_date_current_dt'])) : ''),
+        (isset($document['workflow_date_current_dt']) ? $date : ''),
         $document['workflow_activity_category_current_ms'][0],
         $document['workflow_activity_status_current_ms'][0],
         $document['workflow_activity_note_current_ms'][0],
       ),
     );
   }
+
+  // Add class flagging this as a "read more" candidate.
+  $build['#attributes']['class'][] = 'read-more';
+  $build['#attached']['js'][] = drupal_get_path('module', 'cwrc_dashboards') . '/js/read-more.js';
 
   // Return render array.
   return $build;
@@ -468,7 +509,8 @@ function cwrc_dashboards_project_recently_edited_block() {
 
   // Build select query for assigned to me block.
   $query = $client->createSelect();
-  $query->setQuery('ancestors_ms:"' . $wrapper->{CWRC_PROJECTS_COLLECTION_PID_FIELD}->value()->id . '"')
+  $helper = $query->getHelper();
+  $query->setQuery('ancestors_ms:' . $helper->escapePhrase($wrapper->{CWRC_PROJECTS_COLLECTION_PID_FIELD}->value()->id))
     ->setFields(array(
       "PID",
       "fgs_label_s",
@@ -482,7 +524,7 @@ function cwrc_dashboards_project_recently_edited_block() {
       "workflow_userID_current_ms",
     ))
     ->addSort('workflow_date_current_dt', $query::SORT_DESC)
-    ->setRows(5);
+    ->setRows(100);
 
   // Get query results.
   $results = $client->select($query);
@@ -511,7 +553,11 @@ function cwrc_dashboards_project_recently_edited_block() {
     // Determine lock status.
     // TODO: This is ugly, make a helper.
     if (isset($document['RELS_EXT_lock-expiry_literal_s'])) {
-      $lock_expiry = new DateTime($document['RELS_EXT_lock-expiry_literal_s']);
+      if ($document['RELS_EXT_lock-expiry_literal_s'] == 'indefinite') {
+        $lock_expiry = new DateTime('+1 HOUR');
+      } else {
+        $lock_expiry = new DateTime($document['RELS_EXT_lock-expiry_literal_s']);
+      }
       $now = new DateTime();
       if ($lock_expiry > $now) {
         if ($document['RELS_EXT_locked-by_literal_s'] == $user->name) {
@@ -540,7 +586,17 @@ function cwrc_dashboards_project_recently_edited_block() {
     // Get the user who assigned this work.
     $assigned_by = (isset($document['workflow_userID_current_ms'][0])) ? user_load_by_name($document['workflow_userID_current_ms'][0]) : false;
 
+    if ($assigned_by != null && isset($assigned_by->uid)) {
+      $assigned_by_name = realname_load($assigned_by);
+    } else {
+      $assigned_by_name = t("a user");
+    }
+
     // Build the row.
+    $time = strtotime($document['workflow_date_current_dt']);
+    if ($time != null && $time != false) $date = format_date(intval($time));
+    else $date = "";
+
     $build['#rows'][] = array(
       // Add a class for workflow stamp styling.
       'class' => array('cwrc-workflow-' . $document['workflow_activity_category_current_ms'][0]),
@@ -568,13 +624,17 @@ function cwrc_dashboards_project_recently_edited_block() {
             ),
           ),
         ),
-        ($assigned_by) ? l(realname_load($assigned_by), 'user/' . $assigned_by->uid) : t('Unknown'),
-        (isset($documet['workflow_date_current_dt']) ? format_date(strtotime($document['workflow_date_current_dt'])) : ''),
+        ($assigned_by) ? l($assigned_by_name, 'user/' . $assigned_by->uid) : t('Unknown'),
+        (isset($document['workflow_date_current_dt']) ? $date : ''),
         $document['workflow_activity_status_current_ms'][0],
         $document['workflow_activity_category_current_ms'][0],
       ),
     );
   }
+
+  // Add class flagging this as a "read more" candidate and attach js.
+  $build['#attributes']['class'][] = 'read-more';
+  $build['#attached']['js'][] = drupal_get_path('module', 'cwrc_dashboards') . '/js/read-more.js';
 
   // Return render array.
   return $build;
@@ -585,14 +645,15 @@ function cwrc_dashboards_project_recently_edited_block() {
  */
 function cwrc_dashboards_project_utilities_block() {
   $node = menu_get_object();
+  $group_entity_type = 'node';
 
-  if ($node === NULL || !og_is_group('node', $node->nid)) {
+  if ($node === NULL || !og_is_group($group_entity_type, $node->nid)) {
     // Not a group.
     return NULL;
   }
 
   // Wrap the node and get the project collection pid.
-  $wrapper = entity_metadata_wrapper('node', $node);
+  $wrapper = entity_metadata_wrapper($group_entity_type, $node);
   $pid = $wrapper->{CWRC_PROJECTS_COLLECTION_PID_FIELD}->value()->id;
   $nid = $wrapper->getIdentifier();
 
@@ -617,38 +678,55 @@ function cwrc_dashboards_project_utilities_block() {
     ),
   ));
 
-  // Find and replace utility link (islandora_xquery).
-  $build['#items'][] = array(
-    'data' => l(t('Find and Replace'), 'islandora/search', $options),
-    'class' => array('cwrc-dashboards-project-utility-block', 'find-replace'),
-  );
+  // Find and replace utility link. This functionality is provided by the
+  // islandora_solr contrib module, so we chech whether that module exists
+  // before linking to it.
+  if (module_exists('islandora_solr') && og_user_access($group_entity_type, $nid, 'find and replace in project') === TRUE) {
+    $build['#items'][] = array(
+      'data' => l(t('Find and Replace'), 'islandora/search', $options),
+      'class' => array('cwrc-dashboards-project-utility-block', 'find-replace'),
+    );
+  }
 
-  // Back-up/Download utility link (islandora_bagit).
-  $build['#items'][] = array(
-    'data' => l(t('Back-up/Download'), "islandora/object/$pid/manage/bagit", array('query' => array('destination' => $_GET['q']))),
-    'class' => array('cwrc-dashboards-project-utility-block', 'back-up'),
-  );
+  // Back-up/download project menu link. This functionality is provided by the
+  // islandora_bagit contrib module, so we check whether that module exists
+  // before linking to it.
+  if (module_exists('islandora_bagit') && og_user_access($group_entity_type, $nid, 'back-up project with islandora_bagit')) {
+    $build['#items'][] = array(
+      'data' => l(t('Back-up/Download'), "islandora/object/$pid/manage/bagit", array('query' => array('destination' => $_GET['q']))),
+      'class' => array('cwrc-dashboards-project-utility-block', 'back-up'),
+    );
+  }
 
-  // Group menu edit link (og_menu_single).
-  if (og_user_access('node', $nid, 'manage menu')) {
+  // Edit project menu link. Note this intentionally checks a permission
+  // defined by the contrib og_menu_single module because it links to a page
+  // defined by the same module. See og_menu_single_og_permission() and
+  // og_menu_single_menu().
+  if (module_exists('og_menu_single') && og_user_access($group_entity_type, $nid, 'manage menu')) {
     $build['#items'][] = array(
       'data' => l(t('Edit project menu'), "group/node/$nid/admin/menu"),
       'class' => array('cwrc-dashboards-project-utility-block', 'edit-menu'),
     );
   }
 
-  // Group page addition link (entityreference_prepopulate).
-  if (og_user_access('node', $nid, 'create page content')) {
+  // Add page to project link. Note this intentionally checks a permission
+  // defined by the contrib og module (in og_list_permissions() through
+  // og_og_permissions()) because it links to a page defined by the core node
+  // module, which the og module gates. Note also that this hard-codes the
+  // machine name of a particular node type; the original permission is actually
+  // "create $type content".
+  if (og_user_access($group_entity_type, $nid, 'create page content')) {
     $build['#items'][] = array(
       'data' => l(t('Add page to project'), "node/add/page", array('query' => array('og_group_ref' => $nid))),
       'class' => array('cwrc-dashboards-project-utility-block', 'add-page'),
     );
   }
 
-  // Group settings edit link (node).
+  // Edit project homepage link. Since this links to the edit node page for the
+  // group, we use node_access() to check permissions.
   if (node_access('update', $wrapper->value())) {
     $build['#items'][] = array(
-      'data' => l(t('Edit project settings'), "node/$nid/edit", array('query' => array('destination' => current_path()))),
+      'data' => l(t('Edit project homepage'), "node/$nid/edit", array('query' => array('destination' => current_path()))),
       'class' => array('cwrc-dashboards-project-utility-block', 'edit-settings'),
     );
   }
@@ -664,8 +742,10 @@ function cwrc_dashboards_project_utilities_block() {
 function cwrc_dashboards_project_workflow_reports_block() {
   global $user;
   $node = menu_get_object();
+  $group_type = 'node';
+  $gid = isset($node->nid) ? $node->nid : 0;
 
-  if ($node === NULL || !og_is_group('node', $node->nid)) {
+  if ($node === NULL || !og_is_group($group_type, $gid)) {
     // Not a group.
     return NULL;
   }
@@ -691,13 +771,17 @@ function cwrc_dashboards_project_workflow_reports_block() {
       $view = array_intersect($report['viewroles'], $user->roles);
       $edit = array_intersect($report['editroles'], $user->roles);
 
-      // View access is granted.
       if (count($view) > 0 || count($edit) > 0) {
+        // View link.
         $item['view'] = l($report['name'], "islandora/search/" . $report['query'], array('query' => array('workflow_report' => $report['lid'], 'display' => 'cwrc_report')));
 
-        // Edit access is granted.
-        if (count($edit) > 0) {
+        // Edit button.
+        if (count($edit) > 0 && og_user_access($group_type, $gid, 'edit workflow reports from workflow reports block')) {
           $item['edit'] = url("islandora_workflow_rest/reports", array('query' => array('lid' => $report['lid'], 'action' => 'edit')));
+        }
+
+        // Delete button.
+        if (count($edit) > 0 && og_user_access($group_type, $gid, 'remove workflow reports from workflow reports block')) {
           $item['delete'] = url("islandora_workflow_rest/delete_report/{$report['lid']}/{$report['name']}");
         }
 
@@ -731,7 +815,8 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
 
   // Build select query for assigned to me block.
   $query = $client->createSelect();
-  $query->setQuery('ancestors_ms:"' . $wrapper->{CWRC_PROJECTS_COLLECTION_PID_FIELD}->value()->id . '" AND RELS_EXT_lock-expiry_literal_s:[* TO *]')
+  $helper = $query->getHelper();
+  $query->setQuery('ancestors_ms:' . $helper->escapePhrase($wrapper->{CWRC_PROJECTS_COLLECTION_PID_FIELD}->value()->id) . ' AND RELS_EXT_lock-expiry_literal_s:[* TO *]')
     ->setFields(array(
       "PID",
       "fgs_label_s",
@@ -739,8 +824,7 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
       "RELS_EXT_locked-by_literal_s",
       "RELS_EXT_lock-expiry_literal_s",
     ))
-    ->addSort('workflow_date_current_dt', $query::SORT_DESC)
-    ->setRows(5);
+    ->addSort('workflow_date_current_dt', $query::SORT_DESC);
 
   // Get query results.
   $results = $client->select($query);
@@ -755,6 +839,18 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
       'locked_by' => t('Locked by'),
       'expiry' => t('Expiry'),
     ),
+
+    // Add class flagging this as a "read more" candidate.
+    '#attributes' => array(
+      'class' => array(
+        'read-more',
+      ),
+    ),
+    '#attached' => array(
+      'js' => array(
+        drupal_get_path('module', 'cwrc_dashboards') . '/js/read-more.js',
+      ),
+    ),
   );
 
   // Fill rows with objects.
@@ -762,10 +858,20 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
     if (isset($document['RELS_EXT_locked-by_literal_s'])) {
       $locked_by = user_load_by_name($document['RELS_EXT_locked-by_literal_s']);
 
+      if ($locked_by != null && isset($locked_by->uid)) {
+        $locked_by_name = realname_load($locked_by);
+      } else {
+        $locked_by_name = t("a user");
+      }
+
+      $time = strtotime($document['RELS_EXT_lock-expiry_literal_s']);
+      if ($time != null && $time != false) $date = format_date(intval($time));
+      else $date = "";
+
       $form['objects']['#options'][$document['PID']] = array(
         'object' => l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
-        'locked_by' => l(realname_load($locked_by), 'user/' . $locked_by->uid),
-        'expiry' => format_date(strtotime($document['RELS_EXT_lock-expiry_literal_s'])),
+        'locked_by' => l($locked_by_name, 'user/' . $locked_by->uid),
+        'expiry' => $date,
       );
     }
   }

@@ -76,7 +76,7 @@ function cwrc_dashboards_views_default_views() {
   $handler->display->display_options['fields']['ops']['label'] = '';
   $handler->display->display_options['fields']['ops']['element_label_colon'] = FALSE;
   $handler->display->display_options['fields']['ops']['link_type'] = 'toggle';
-  /* Field: Content: Name */
+  /* Field: Content: Title */
   $handler->display->display_options['fields']['title_field']['id'] = 'title_field';
   $handler->display->display_options['fields']['title_field']['table'] = 'field_data_title_field';
   $handler->display->display_options['fields']['title_field']['field'] = 'title_field';
@@ -106,7 +106,7 @@ function cwrc_dashboards_views_default_views() {
   $handler->display->display_options['sorts']['flagged']['field'] = 'flagged';
   $handler->display->display_options['sorts']['flagged']['relationship'] = 'flag_content_rel';
   $handler->display->display_options['sorts']['flagged']['order'] = 'DESC';
-  /* Sort criterion: Content: Name (title_field) */
+  /* Sort criterion: Content: Title (title_field) */
   $handler->display->display_options['sorts']['title_field_value']['id'] = 'title_field_value';
   $handler->display->display_options['sorts']['title_field_value']['table'] = 'field_data_title_field';
   $handler->display->display_options['sorts']['title_field_value']['field'] = 'title_field_value';
@@ -138,7 +138,7 @@ function cwrc_dashboards_views_default_views() {
   $handler->display->display_options['empty']['area']['table'] = 'views';
   $handler->display->display_options['empty']['area']['field'] = 'area';
   $handler->display->display_options['empty']['area']['empty'] = TRUE;
-  $handler->display->display_options['empty']['area']['content'] = 'You have not starred any projects yet, when you do they will appear here.';
+  $handler->display->display_options['empty']['area']['content'] = 'Star projects in your dashboard and they will appear below.';
   $handler->display->display_options['empty']['area']['format'] = 'filtered_html';
   $handler->display->display_options['defaults']['fields'] = FALSE;
   /* Field: Content: Nid */
@@ -149,7 +149,7 @@ function cwrc_dashboards_views_default_views() {
   $handler->display->display_options['fields']['nid']['label'] = '';
   $handler->display->display_options['fields']['nid']['exclude'] = TRUE;
   $handler->display->display_options['fields']['nid']['element_label_colon'] = FALSE;
-  /* Field: Content: Name */
+  /* Field: Content: Title */
   $handler->display->display_options['fields']['title_field']['id'] = 'title_field';
   $handler->display->display_options['fields']['title_field']['table'] = 'field_data_title_field';
   $handler->display->display_options['fields']['title_field']['field'] = 'title_field';
@@ -191,7 +191,7 @@ function cwrc_dashboards_views_default_views() {
     t('Dashboard Block'),
     t('User Menu Block'),
     t('Project Dashboards'),
-    t('You have not starred any projects yet, when you do they will appear here.'),
+    t('Star projects in your dashboard and they will appear below.'),
   );
   $export['my_projects'] = $view;
 
@@ -209,7 +209,8 @@ function cwrc_dashboards_views_default_views() {
   $handler = $view->new_display('default', 'Master', 'default');
   $handler->display->display_options['title'] = 'Pending applications';
   $handler->display->display_options['use_more_always'] = FALSE;
-  $handler->display->display_options['access']['type'] = 'none';
+  $handler->display->display_options['access']['type'] = 'og_context';
+  $handler->display->display_options['access']['perm'] = 'see pending applications block';
   $handler->display->display_options['cache']['type'] = 'none';
   $handler->display->display_options['query']['type'] = 'views_query';
   $handler->display->display_options['exposed_form']['type'] = 'basic';
@@ -358,7 +359,7 @@ function cwrc_dashboards_views_default_views() {
   $handler->display->display_options['fields']['created']['label'] = 'Date';
   $handler->display->display_options['fields']['created']['date_format'] = 'today time ago';
   $handler->display->display_options['fields']['created']['second_date_format'] = 'short';
-  /* Field: OG membership: Request message */
+  /* Field: OG membership: Welcome Message */
   $handler->display->display_options['fields']['og_membership_request']['id'] = 'og_membership_request';
   $handler->display->display_options['fields']['og_membership_request']['table'] = 'field_data_og_membership_request';
   $handler->display->display_options['fields']['og_membership_request']['field'] = 'og_membership_request';
@@ -435,8 +436,8 @@ function cwrc_dashboards_views_default_views() {
   $handler->display->display_options['title'] = 'Project members';
   $handler->display->display_options['use_ajax'] = TRUE;
   $handler->display->display_options['use_more_always'] = FALSE;
-  $handler->display->display_options['access']['type'] = 'perm';
-  $handler->display->display_options['access']['perm'] = 'access user profiles';
+  $handler->display->display_options['access']['type'] = 'og_context';
+  $handler->display->display_options['access']['perm'] = 'see project_members block';
   $handler->display->display_options['cache']['type'] = 'none';
   $handler->display->display_options['query']['type'] = 'views_query';
   $handler->display->display_options['exposed_form']['type'] = 'basic';
@@ -556,6 +557,13 @@ function cwrc_dashboards_views_default_views() {
   $handler->display->display_options['fields']['name']['field'] = 'name';
   $handler->display->display_options['fields']['name']['alter']['word_boundary'] = FALSE;
   $handler->display->display_options['fields']['name']['alter']['ellipsis'] = FALSE;
+  /* Field: OG membership: OG user roles in group */
+  $handler->display->display_options['fields']['og_roles']['id'] = 'og_roles';
+  $handler->display->display_options['fields']['og_roles']['table'] = 'og_membership';
+  $handler->display->display_options['fields']['og_roles']['field'] = 'og_roles';
+  $handler->display->display_options['fields']['og_roles']['relationship'] = 'og_membership_rel';
+  $handler->display->display_options['fields']['og_roles']['label'] = 'Project Roles';
+  $handler->display->display_options['fields']['og_roles']['element_label_colon'] = FALSE;
   /* Sort criterion: Realname: Real name */
   $handler->display->display_options['sorts']['realname']['id'] = 'realname';
   $handler->display->display_options['sorts']['realname']['table'] = 'realname';
@@ -604,6 +612,7 @@ function cwrc_dashboards_views_default_views() {
     t('Modify roles'),
     t('Remove'),
     t('Name'),
+    t('Project Roles'),
     t('All'),
     t('Block'),
   );

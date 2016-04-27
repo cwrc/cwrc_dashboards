@@ -5,6 +5,6 @@ function cwrc_dashboards_user_dashboard($user) {
 }
 
 function cwrc_dashboards_project_dashboard($node) {
-  drupal_set_title(t('Dashboard: @title', array('@title' => $node->title)));
+  drupal_set_title($node->title);
   return '';
 }

@@ -22,6 +22,24 @@ function cwrc_dashboards_default_semantic_wrapper() {
   $semantic_wrapper = new stdClass();
   $semantic_wrapper->disabled = FALSE; /* Edit this to true to make a default semantic_wrapper disabled initially */
   $semantic_wrapper->api_version = 1;
+  $semantic_wrapper->uid = 'block_3';
+  $semantic_wrapper->module = 'block';
+  $semantic_wrapper->delta = '3';
+  $semantic_wrapper->semantics = 'zip';
+  $export['block_3'] = $semantic_wrapper;
+
+  $semantic_wrapper = new stdClass();
+  $semantic_wrapper->disabled = FALSE; /* Edit this to true to make a default semantic_wrapper disabled initially */
+  $semantic_wrapper->api_version = 1;
+  $semantic_wrapper->uid = 'block_4';
+  $semantic_wrapper->module = 'block';
+  $semantic_wrapper->delta = '4';
+  $semantic_wrapper->semantics = 'zip';
+  $export['block_4'] = $semantic_wrapper;
+
+  $semantic_wrapper = new stdClass();
+  $semantic_wrapper->disabled = FALSE; /* Edit this to true to make a default semantic_wrapper disabled initially */
+  $semantic_wrapper->api_version = 1;
   $semantic_wrapper->uid = 'cwrc_dashboards_project_locked_objects';
   $semantic_wrapper->module = 'cwrc_dashboards';
   $semantic_wrapper->delta = 'project_locked_objects';
@@ -99,6 +117,15 @@ function cwrc_dashboards_default_semantic_wrapper() {
   $semantic_wrapper->delta = 'user_workflow_reports';
   $semantic_wrapper->semantics = 'zip';
   $export['cwrc_dashboards_user_workflow_reports'] = $semantic_wrapper;
+
+  $semantic_wrapper = new stdClass();
+  $semantic_wrapper->disabled = FALSE; /* Edit this to true to make a default semantic_wrapper disabled initially */
+  $semantic_wrapper->api_version = 1;
+  $semantic_wrapper->uid = 'islandora_saved_searches_saved_searches';
+  $semantic_wrapper->module = 'islandora_saved_searches';
+  $semantic_wrapper->delta = 'saved_searches';
+  $semantic_wrapper->semantics = 'zip';
+  $export['islandora_saved_searches_saved_searches'] = $semantic_wrapper;
 
   $semantic_wrapper = new stdClass();
   $semantic_wrapper->disabled = FALSE; /* Edit this to true to make a default semantic_wrapper disabled initially */
