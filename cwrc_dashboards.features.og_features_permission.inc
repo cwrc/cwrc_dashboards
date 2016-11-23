@@ -13,7 +13,6 @@ function cwrc_dashboards_og_features_default_permissions() {
   // Exported og permission: 'node:project:back-up project with islandora_bagit'
   $permissions['node:project:back-up project with islandora_bagit'] = array(
     'roles' => array(
-      'administrator member' => 'administrator member',
       'member' => 'member',
       'project contributor' => 'project contributor',
       'project editor' => 'project editor',
@@ -30,7 +29,6 @@ function cwrc_dashboards_og_features_default_permissions() {
   // Exported og permission: 'node:project:find and replace in project'
   $permissions['node:project:find and replace in project'] = array(
     'roles' => array(
-      'administrator member' => 'administrator member',
       'project editor' => 'project editor',
     ),
   );
@@ -45,7 +43,6 @@ function cwrc_dashboards_og_features_default_permissions() {
   // Exported og permission: 'node:project:see pending applications block'
   $permissions['node:project:see pending applications block'] = array(
     'roles' => array(
-      'administrator member' => 'administrator member',
       'project editor' => 'project editor',
     ),
   );
