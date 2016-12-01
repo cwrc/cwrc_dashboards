@@ -1,13 +1,18 @@
 <?php
 
 /**
+ * @file
+ * Define dashboard blocks.
+ */
+
+/**
  * Builds a table list of messages for the current user.
  */
 function cwrc_dashboards_user_privatemsg_block() {
 
   // Quick permission check.
   if (!user_access('read privatemsg')) {
-    return false;
+    return FALSE;
   }
 
   global $user;
@@ -51,9 +56,10 @@ function cwrc_dashboards_user_privatemsg_block() {
       if ($participant->recipient != $user->uid) {
         $account = user_load($participant->recipient);
 
-        if ($account != null && isset($account->uid)) {
+        if ($account != NULL && isset($account->uid)) {
           $name = realname_load($account);
-        } else {
+        }
+        else {
           $name = t("a user");
         }
 
@@ -62,8 +68,12 @@ function cwrc_dashboards_user_privatemsg_block() {
     }
 
     // Build the rows.
-    if ($thread->last_updated != null && $thread->last_updated != false) $date = format_date(intval($thread->last_updated));
-    else $date = "";
+    if ($thread->last_updated != NULL && $thread->last_updated != FALSE) {
+      $date = format_date(intval($thread->last_updated));
+    }
+    else {
+      $date = "";
+    }
     $build['table']['#rows'][] = array(
       'class' => ($thread->is_new) ? array('is-new') : array(),
       'data' => array(
@@ -136,38 +146,42 @@ function cwrc_dashboards_user_assigned_to_me_block() {
     if (isset($document['RELS_EXT_lock-expiry_literal_s'])) {
       if ($document['RELS_EXT_lock-expiry_literal_s'] == 'indefinite') {
         $lock_expiry = new DateTime('+1 HOUR');
-      } else {
+      }
+      else {
         $lock_expiry = new DateTime($document['RELS_EXT_lock-expiry_literal_s']);
       }
       $now = new DateTime();
       if ($lock_expiry > $now) {
         if ($document['RELS_EXT_locked-by_literal_s'] == $user->name) {
-          // Locked and owned by current user
+          // Locked and owned by current user.
           $locked = 'cwrc-object-locked-owned';
           $locked_message = 'Locked (you own the lock)';
-        } else {
+        }
+        else {
           $locked = 'cwrc-object-locked-not-owned';
           $locked_message = 'Locked';
         }
-      } else {
+      }
+      else {
         $locked = 'cwrc-object-not-locked';
         $locked_message = 'Not locked';
       }
-    } else {
+    }
+    else {
       $locked = 'cwrc-object-not-locked';
       $locked_message = 'Not locked';
     }
 
     // Determine parent project.
     $project = _cwrc_projects_get_project($document['PID'], $document['ancestors_ms']);
-    if ($project !== false) {
+    if ($project !== FALSE) {
       $project_uri = entity_uri('node', $project);
       $wrapper = entity_metadata_wrapper('node', $project);
       $wrapper->language($language->language);
 
       // Get the logo, hide project if no logo is present.
       $logo = $wrapper->field_logo->value();
-      if ($logo !== null) {
+      if ($logo !== NULL) {
         $logo = theme_image_style(array(
           'style_name' => 'icon',
           'path' => $logo['uri'],
@@ -175,24 +189,30 @@ function cwrc_dashboards_user_assigned_to_me_block() {
           'height' => $logo['metadata']['height'],
           'alt' => (empty($logo['alt'])) ? $wrapper->title_field->value() : $logo['alt'],
         ));
-      } else {
-        $project = false;
+      }
+      else {
+        $project = FALSE;
       }
     }
 
     // Get the user who assigned this work.
     $assigned_by = user_load_by_name($document['workflow_userID_current_ms'][0]);
 
-    if ($assigned_by != null && isset($assigned_by->uid)) {
+    if ($assigned_by != NULL && isset($assigned_by->uid)) {
       $assigned_by_name = realname_load($assigned_by);
-    } else {
+    }
+    else {
       $assigned_by_name = t("a user");
     }
 
     // Build the row.
     $time = strtotime($document['workflow_date_current_dt']);
-    if ($time != null && $time != false) $date = format_date(intval($time));
-    else $date = "";
+    if ($time != NULL && $time != FALSE) {
+      $date = format_date(intval($time));
+    }
+    else {
+      $date = "";
+    }
 
     $build['#rows'][] = array(
       // Add a class for workflow stamp styling.
@@ -201,7 +221,7 @@ function cwrc_dashboards_user_assigned_to_me_block() {
       // Build the columns.
       'data' => array(
         // Project logo (if available).
-        ($project !== false) ? l($logo, $project_uri['path'], array('html' => true)) : '',
+        ($project !== FALSE) ? l($logo, $project_uri['path'], array('html' => TRUE)) : '',
 
         // Object link.
         l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
@@ -219,7 +239,7 @@ function cwrc_dashboards_user_assigned_to_me_block() {
             array(
               '#type' => 'html_tag',
               '#tag' => 'span',
-              '#attributes' => array('class' =>'hide-txt'),
+              '#attributes' => array('class' => 'hide-txt'),
               '#value' => $locked_message,
             ),
           ),
@@ -303,38 +323,42 @@ function cwrc_dashboards_user_recently_edited_block() {
     if (isset($document['RELS_EXT_lock-expiry_literal_s'])) {
       if ($document['RELS_EXT_lock-expiry_literal_s'] == 'indefinite') {
         $lock_expiry = new DateTime('+1 HOUR');
-      } else {
+      }
+      else {
         $lock_expiry = new DateTime($document['RELS_EXT_lock-expiry_literal_s']);
       }
       $now = new DateTime();
       if ($lock_expiry > $now) {
         if ($document['RELS_EXT_locked-by_literal_s'] == $user->name) {
-          // Locked and owned by current user
+          // Locked and owned by current user.
           $locked = 'cwrc-object-locked-owned';
           $locked_message = 'Locked (you own the lock)';
-        } else {
+        }
+        else {
           $locked = 'cwrc-object-locked-not-owned';
           $locked_message = 'Locked';
         }
-      } else {
+      }
+      else {
         $locked = 'cwrc-object-not-locked';
         $locked_message = 'Not locked';
       }
-    } else {
+    }
+    else {
       $locked = 'cwrc-object-not-locked';
       $locked_message = 'Not locked';
     }
 
     // Determine parent project.
     $project = _cwrc_projects_get_project($document['PID'], $document['ancestors_ms']);
-    if ($project !== false) {
+    if ($project !== FALSE) {
       $project_uri = entity_uri('node', $project);
       $wrapper = entity_metadata_wrapper('node', $project);
       $wrapper->language($language->language);
 
       // Get the logo, hide project if no logo is present.
       $logo = $wrapper->field_logo->value();
-      if ($logo !== null) {
+      if ($logo !== NULL) {
         $logo = theme_image_style(array(
           'style_name' => 'icon',
           'path' => $logo['uri'],
@@ -342,15 +366,20 @@ function cwrc_dashboards_user_recently_edited_block() {
           'height' => $logo['metadata']['height'],
           'alt' => (empty($logo['alt'])) ? $wrapper->title_field->value() : $logo['alt'],
         ));
-      } else {
-        $project = false;
+      }
+      else {
+        $project = FALSE;
       }
     }
 
     // Build the row.
     $time = strtotime($document['workflow_date_current_dt']);
-    if ($time != null && $time != false) $date = format_date(intval($time));
-    else $date = "";
+    if ($time != NULL && $time != FALSE) {
+      $date = format_date(intval($time));
+    }
+    else {
+      $date = "";
+    }
 
     $build['#rows'][] = array(
       // Add a class for workflow stamp styling.
@@ -359,7 +388,7 @@ function cwrc_dashboards_user_recently_edited_block() {
       // Build the columns.
       'data' => array(
         // Project logo (if available).
-        ($project !== false) ? l($logo, $project_uri['path'], array('html' => true)) : '',
+        ($project !== FALSE) ? l($logo, $project_uri['path'], array('html' => TRUE)) : '',
 
         // Object link.
         l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
@@ -377,13 +406,13 @@ function cwrc_dashboards_user_recently_edited_block() {
             '1' => array(
               '#type' => 'html_tag',
               '#tag' => 'span',
-              '#attributes' => array('class' =>'hide-txt'),
+              '#attributes' => array('class' => 'hide-txt'),
               '#value' => $locked_message,
             ),
           ),
         ),
 
-        // Assigned, project, time changed, stamp and category
+        // Assigned, project, time changed, stamp and category.
         (isset($document['workflow_date_current_dt']) ? $date : ''),
         $document['workflow_activity_category_current_ms'][0],
         $document['workflow_activity_status_current_ms'][0],
@@ -401,6 +430,8 @@ function cwrc_dashboards_user_recently_edited_block() {
 }
 
 /**
+ * Build a block to display user's own bookmark lists, and lists shared to user.
+ *
  * Function that builds a block to display bookmark lists the user owns and
  * bookmark lists shared with the user.
  */
@@ -439,8 +470,7 @@ function cwrc_dashboards_user_bookmark_lists_block() {
 }
 
 /**
- * Function that builds a block to display workflow reports the user has access
- * to.
+ * Display block with workflow reports the user has access to.
  */
 function cwrc_dashboards_user_workflow_reports_block() {
   global $user;
@@ -479,7 +509,7 @@ function cwrc_dashboards_user_workflow_reports_block() {
   }
 
   if (user_access(ISLANDORA_WORKFLOW_REST_ISLANDORA_ENTITIES_VIEW_REPORTS)) {
-    $build['#admin_access'] = true;
+    $build['#admin_access'] = TRUE;
   }
 
   // Return render array.
@@ -555,47 +585,56 @@ function cwrc_dashboards_project_recently_edited_block() {
     if (isset($document['RELS_EXT_lock-expiry_literal_s'])) {
       if ($document['RELS_EXT_lock-expiry_literal_s'] == 'indefinite') {
         $lock_expiry = new DateTime('+1 HOUR');
-      } else {
+      }
+      else {
         $lock_expiry = new DateTime($document['RELS_EXT_lock-expiry_literal_s']);
       }
       $now = new DateTime();
       if ($lock_expiry > $now) {
         if ($document['RELS_EXT_locked-by_literal_s'] == $user->name) {
-          // Locked and owned by current user
+          // Locked and owned by current user.
           $locked = 'cwrc-object-locked-owned';
           $locked_message = 'Locked (you own the lock)';
-        } else {
+        }
+        else {
           $locked = 'cwrc-object-locked-not-owned';
           $locked_message = 'Locked';
         }
-      } else {
+      }
+      else {
         $locked = 'cwrc-object-not-locked';
         $locked_message = 'Not locked';
       }
-    } else {
+    }
+    else {
       $locked = 'cwrc-object-not-locked';
       $locked_message = 'Not locked';
     }
 
     // Determine parent project.
     $project = _cwrc_projects_get_project($document['PID'], $document['ancestors_ms']);
-    if ($project !== false) {
+    if ($project !== FALSE) {
       $project_uri = entity_uri('node', $project);
     }
 
     // Get the user who assigned this work.
-    $assigned_by = (isset($document['workflow_userID_current_ms'][0])) ? user_load_by_name($document['workflow_userID_current_ms'][0]) : false;
+    $assigned_by = (isset($document['workflow_userID_current_ms'][0])) ? user_load_by_name($document['workflow_userID_current_ms'][0]) : FALSE;
 
-    if ($assigned_by != null && isset($assigned_by->uid)) {
+    if ($assigned_by != NULL && isset($assigned_by->uid)) {
       $assigned_by_name = realname_load($assigned_by);
-    } else {
+    }
+    else {
       $assigned_by_name = t("a user");
     }
 
     // Build the row.
     $time = strtotime($document['workflow_date_current_dt']);
-    if ($time != null && $time != false) $date = format_date(intval($time));
-    else $date = "";
+    if ($time != NULL && $time != FALSE) {
+      $date = format_date(intval($time));
+    }
+    else {
+      $date = "";
+    }
 
     $build['#rows'][] = array(
       // Add a class for workflow stamp styling.
@@ -619,7 +658,7 @@ function cwrc_dashboards_project_recently_edited_block() {
             '1' => array(
               '#type' => 'html_tag',
               '#tag' => 'span',
-              '#attributes' => array('class' =>'hide-txt'),
+              '#attributes' => array('class' => 'hide-txt'),
               '#value' => $locked_message,
             ),
           ),
@@ -671,12 +710,14 @@ function cwrc_dashboards_project_utilities_block() {
   );
 
   // Options with query for find and replace link.
-  $options = array('query' => array(
-    'display' => 'xquery',
-    'f' => array(
-      'ancestors_ms:"' . Apache_Solr_Service::escape($pid) . '"',
+  $options = array(
+    'query' => array(
+      'display' => 'xquery',
+      'f' => array(
+        'ancestors_ms:"' . Apache_Solr_Service::escape($pid) . '"',
+      ),
     ),
-  ));
+  );
 
   // Find and replace utility link. This functionality is provided by the
   // islandora_solr contrib module, so we chech whether that module exists
@@ -736,8 +777,7 @@ function cwrc_dashboards_project_utilities_block() {
 }
 
 /**
- * Function that builds a block to display workflow reports the user has access
- * to.
+ * Build a block to display workflow reports the user has access to.
  */
 function cwrc_dashboards_project_workflow_reports_block() {
   global $user;
@@ -858,15 +898,20 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
     if (isset($document['RELS_EXT_locked-by_literal_s'])) {
       $locked_by = user_load_by_name($document['RELS_EXT_locked-by_literal_s']);
 
-      if ($locked_by != null && isset($locked_by->uid)) {
+      if ($locked_by != NULL && isset($locked_by->uid)) {
         $locked_by_name = realname_load($locked_by);
-      } else {
+      }
+      else {
         $locked_by_name = t("a user");
       }
 
       $time = strtotime($document['RELS_EXT_lock-expiry_literal_s']);
-      if ($time != null && $time != false) $date = format_date(intval($time));
-      else $date = "";
+      if ($time != NULL && $time != FALSE) {
+        $date = format_date(intval($time));
+      }
+      else {
+        $date = "";
+      }
 
       $form['objects']['#options'][$document['PID']] = array(
         'object' => l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
@@ -880,7 +925,7 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
   if (count($form['objects']['#options']) > 0) {
     $form['submit'] = array(
       '#type' => 'submit',
-      '#executes_submit_callback' => true,
+      '#executes_submit_callback' => TRUE,
       '#value' => t('Release selected locks'),
       '#submit' => array('cwrc_dashboards_project_locked_objects_block_form_submit'),
     );

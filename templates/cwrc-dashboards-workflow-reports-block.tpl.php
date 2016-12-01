@@ -1,4 +1,10 @@
-<?php if (count($reports) > 0) { ?>
+<?php
+
+/**
+ * @file
+ * Display a list of workflow reports.
+ */
+if (count($reports) > 0) { ?>
   <ul class="user-workflow-report-list lists-with-actions">
     <?php foreach ($reports as $report) { ?>
       <li><span class="txt-item-in-list"><?php echo $report['view']; ?></span>

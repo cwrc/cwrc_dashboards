@@ -541,7 +541,7 @@ function _cwrc_dashboards_modify_form_id(&$form, $form_id) {
  * @param string $additional_permission_name
  *   An additional permission machine name to check.
  * @param string $group_entity_type
- *   The type of entity whose dashboard we want to show
+ *   The type of entity whose dashboard we want to show.
  *
  * @return bool
  *   Returns FALSE if a group could not be found; otherwise defers processing to

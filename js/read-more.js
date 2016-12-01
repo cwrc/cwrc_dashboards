@@ -1,4 +1,9 @@
-(function($) {
+/**
+ * @file
+ * Client-side scripts to display read-more rows.
+ */
+
+(function ($) {
   Drupal.behaviors.cwrcDashboardsReadMore = {
     attach: function (context, settings) {
       // Markup for "Show all" button.
@@ -35,7 +40,8 @@
               $(this).html(Drupal.t('Show less'));
 
             // Rows are shown, hide them.
-            } else {
+            }
+else {
               rows.hide();
               $(this).addClass('hidden');
               $(this).html(Drupal.t('Show all'));
