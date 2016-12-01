@@ -459,7 +459,7 @@ function cwrc_dashboards_locked_objects_batch_finished($success, $results, $oper
   curl_setopt($ch, CURLOPT_POST, 1);
   curl_setopt($ch, CURLOPT_POSTFIELDS, "<commit/>");
   curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/xml'));
-  $result = curl_exec($ch);
+  curl_exec($ch);
   curl_close($ch);
 
   // Set a message warning about possible reasons this didn't work...

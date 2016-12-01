@@ -611,12 +611,6 @@ function cwrc_dashboards_project_recently_edited_block() {
       $locked_message = 'Not locked';
     }
 
-    // Determine parent project.
-    $project = _cwrc_projects_get_project($document['PID'], $document['ancestors_ms']);
-    if ($project !== FALSE) {
-      $project_uri = entity_uri('node', $project);
-    }
-
     // Get the user who assigned this work.
     $assigned_by = (isset($document['workflow_userID_current_ms'][0])) ? user_load_by_name($document['workflow_userID_current_ms'][0]) : FALSE;
 
