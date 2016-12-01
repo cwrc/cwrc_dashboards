@@ -182,7 +182,7 @@ function cwrc_dashboards_user_assigned_to_me_block() {
       // Get the logo, hide project if no logo is present.
       $logo = $wrapper->field_logo->value();
       if ($logo !== NULL) {
-        $logo = theme_image_style(array(
+        $logo = theme('image_style', array(
           'style_name' => 'icon',
           'path' => $logo['uri'],
           'width' => $logo['metadata']['width'],
@@ -359,7 +359,7 @@ function cwrc_dashboards_user_recently_edited_block() {
       // Get the logo, hide project if no logo is present.
       $logo = $wrapper->field_logo->value();
       if ($logo !== NULL) {
-        $logo = theme_image_style(array(
+        $logo = theme('image_style', array(
           'style_name' => 'icon',
           'path' => $logo['uri'],
           'width' => $logo['metadata']['width'],
