@@ -288,7 +288,7 @@ function cwrc_dashboards_views_bulk_operations_form_alter(&$form, &$form_state, 
       $nid = $node->nid;
       if (og_user_access('node', $nid, 'add user')) {
         $form['add_member'] = array(
-          '#markup' => l(t('Add new member'), $base_url . "group/node/$nid/admin/people/add-user"),
+          '#markup' => l(t('Add new member'), $base_url . "/group/node/$nid/admin/people/add-user"),
           '#weight' => -100,
           '#prefix' => '<div class="cwrc-dashboards-new-member-link-wrapper">',
           '#suffix' => '</div>',
