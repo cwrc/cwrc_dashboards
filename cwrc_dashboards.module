@@ -267,6 +267,7 @@ function cwrc_dashboards_block_view_alter(&$data, $block) {
  * Implements hook_views_bulk_operations_form_alter().
  */
 function cwrc_dashboards_views_bulk_operations_form_alter(&$form, &$form_state, $vbo) {
+  global $base_url;
   // Moves the operations buttons below the views output and adds a link to add
   // membership form.  Also adds an "Add new member" link above the output.
   if (($form['#form_id'] == 'views_form_project_members_block'
@@ -287,7 +288,7 @@ function cwrc_dashboards_views_bulk_operations_form_alter(&$form, &$form_state, 
       $nid = $node->nid;
       if (og_user_access('node', $nid, 'add user')) {
         $form['add_member'] = array(
-          '#markup' => l(t('Add new member'), "group/node/$nid/admin/people/add-user"),
+          '#markup' => l(t('Add new member'), $base_url . "group/node/$nid/admin/people/add-user"),
           '#weight' => -100,
           '#prefix' => '<div class="cwrc-dashboards-new-member-link-wrapper">',
           '#suffix' => '</div>',
@@ -295,7 +296,7 @@ function cwrc_dashboards_views_bulk_operations_form_alter(&$form, &$form_state, 
       }
 
       // Send this to the admin panel instead.
-      $form['#action'] = '/group/node/' . $nid . '/admin/people';
+      $form['#action'] = $base_url . '/group/node/' . $nid . '/admin/people';
       $form_id = 'views_form_og_members_admin_default';
       _cwrc_dashboards_modify_form_id($form, $form_id);
 
@@ -307,7 +308,7 @@ function cwrc_dashboards_views_bulk_operations_form_alter(&$form, &$form_state, 
         return;
       }
 
-      $form['#action'] = '/group/node/' . $node->nid . '/admin/people';
+      $form['#action'] = $base_url . '/group/node/' . $node->nid . '/admin/people';
       $form_id = 'views_form_og_members_admin_default';
       _cwrc_dashboards_modify_form_id($form, $form_id);
 
@@ -318,7 +319,7 @@ function cwrc_dashboards_views_bulk_operations_form_alter(&$form, &$form_state, 
       // Update to redirect to the admin panel.
       $arr = explode("/", $form['#action']);
       if (count($arr) == 4) {
-        $form['#action'] = '/group/node/' . $arr[2] . '/admin/people';
+        $form['#action'] = $base_url . '/group/node/' . $arr[2] . '/admin/people';
       }
     }
   }
