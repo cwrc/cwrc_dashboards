@@ -49,6 +49,24 @@ function cwrc_dashboards_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 4,
   );
+  $items['islandora/object/%islandora_object/project-dashboard/view-homepage'] = array(
+    'title' => 'View Homepage',
+    'page callback' => 'cwrc_dashboards_project_dashboard_homepage',
+    'page arguments' => array('view', 2),
+    'access callback' => 'cwrc_dashboards_contextless_prj_dash_access',
+    'access arguments' => array(2, 'access project dashboard', 'node'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -2,
+  );
+  $items['islandora/object/%islandora_object/project-dashboard/edit-homepage'] = array(
+    'title' => 'Edit Homepage',
+    'page callback' => 'cwrc_dashboards_project_dashboard_homepage',
+    'page arguments' => array('edit', 2),
+    'access callback' => 'cwrc_dashboards_contextless_prj_dash_access',
+    'access arguments' => array(2, 'access project dashboard', 'node'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -1,
+  );
 
   return $items;
 }
@@ -610,3 +628,21 @@ function cwrc_dashboards_get_og_from_fedora_object($fedora_object) {
 
   return $answer;
 }
+
+function cwrc_dashboards_project_dashboard_homepage($node_display , $fedora_object) {
+  $node = cwrc_dashboards_get_og_from_fedora_object($fedora_object);
+
+  if(!empty($node->nid)){
+    switch ($node_display) {
+      case 'edit':
+        drupal_goto('node/' . $node->nid . '/edit');
+        break;
+      case 'view':
+        drupal_goto('node/' . $node->nid);
+        break;
+    }
+  } else {
+    drupal_goto('');
+  }
+}
+
