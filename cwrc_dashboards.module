@@ -94,6 +94,11 @@ function cwrc_dashboards_block_info() {
     'info' => t('CWRC "Workflow Reports" User Dashboard Block'),
     'cache' => DRUPAL_NO_CACHE,
   );
+  $blocks['user_locked_objects'] = array(
+    'info' => t('CWRC "Locked Objects" User Dashboard Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
 
   // Project dashboard blocks.
   $blocks['project_recently_edited'] = array(
@@ -138,6 +143,11 @@ function cwrc_dashboards_block_view($delta = '') {
     case 'user_recently_edited':
       $block['subject'] = t('Recent Workflow Stamps');
       $block['content'] = cwrc_dashboards_user_recently_edited_block();
+      break;
+
+    case 'user_locked_objects':
+      $block['subject'] = t('All Objects Locked By Me');
+      $block['content'] = drupal_get_form('cwrc_dashboards_user_locked_objects_block_form');
       break;
 
     case 'user_bookmark_lists':

@@ -928,3 +928,87 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
   // Return render array.
   return $form;
 }
+
+/**
+ * Function that builds a list of objects that are locked by this user.
+ *
+ * This is dependant on SOLR and the workflow datastream being indexed properly,
+ * see https://github.com/cwrc/basic-solr-config for required SOLR config.
+ */
+function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
+  global $user;
+
+  // Get solarium client.
+  $client = cwrc_dashboards_get_solarium();
+
+  // Build select query for assigned to me block.
+  $query = $client->createSelect();
+  $helper = $query->getHelper();
+  $query->setQuery('RELS_EXT_locked-by_literal_s:' . $user->name . ' AND RELS_EXT_lock-expiry_literal_s:[* TO *]')
+    ->setFields(array(
+      "PID",
+      "fgs_label_s",
+      "RELS_EXT_locked-by_literal_s",
+      "RELS_EXT_lock-expiry_literal_s",
+    ))
+    ->addSort('workflow_date_current_dt', $query::SORT_DESC);
+
+  // Get query results.
+  $results = $client->select($query);
+
+
+  // // Build table select form element.
+  $form['objects'] = array(
+    '#type' => 'tableselect',
+    '#options' => array(),
+    '#empty' => t('You have no locked objects.'),
+    '#header' => array(
+      'object' => t('Object'),
+      'expiry' => t('Expiry'),
+    ),
+    // Add class flagging this as a "read more" candidate.
+    '#attributes' => array(
+      'class' => array(
+        'read-more',
+      ),
+    ),
+    '#attached' => array(
+      'js' => array(
+        drupal_get_path('module', 'cwrc_dashboards') . '/js/read-more.js',
+      ),
+    )
+
+  );
+
+  // // Fill rows with objects.
+  foreach ($results as $document) {
+    if (isset($document['RELS_EXT_locked-by_literal_s'])) {
+
+      $time = strtotime($document['RELS_EXT_lock-expiry_literal_s']);
+      if ($time != NULL && $time != FALSE) {
+        $date = format_date(intval($time));
+      }
+      else {
+        $date = "";
+      }
+
+      $form['objects']['#options'][$document['PID']] = array(
+        'object' => l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
+        'expiry' => $date,
+      );
+    }
+  }
+
+  // Submit button (only if there are rows).
+  if (count($form['objects']['#options']) > 0) {
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#executes_submit_callback' => TRUE,
+      '#value' => t('Release selected locks'),
+      '#submit' => array('cwrc_dashboards_user_locked_objects_block_form_submit'),
+    );
+  }
+
+  // Return render array.
+  return $form;
+}
