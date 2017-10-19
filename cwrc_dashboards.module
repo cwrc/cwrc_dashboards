@@ -656,3 +656,16 @@ function cwrc_dashboards_project_dashboard_homepage($node_display , $fedora_obje
   }
 }
 
+function cwrc_dashboards_islandora_solr_primary_display() {
+  return array(
+    'stamp' => array(
+      'name' => t('Stamp'),
+      'module' => 'cwrc_dashboards',
+      'file' => 'includes/stamp_solr_results.inc',
+      'class' => 'IslandoraSolrResultsStamp',
+      'function' => 'displayResults',
+      'description' => t('Search results for performing an Object stamp operation.'),
+    ),
+  );
+}
+
