@@ -76,6 +76,7 @@ class IslandoraSolrResultsStamp extends IslandoraSolrResults {
 function cwrc_dashboards_results_form($form, &$form_state, $object_results, $solr) {
   module_load_include('inc', 'islandora_workflow_rest', 'includes/cwrc_workflow');
   module_load_include('inc', 'islandora_workflow_rest', 'includes/workflow.form');
+  module_load_include('inc', 'islandora_workflow_rest', 'includes/basic_enum');
   module_load_include('inc', 'islandora_workflow_rest', 'includes/utilities');
 
   // This form gets called in a roundabout fashion and needs to include itself.
@@ -93,21 +94,13 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
     );
   }
   $workflow = NULL;
-  $object = islandora_object_load($object_results[0]['PID']);
-
-  // if (!$object['WORKFLOW']) {
-  //   $workflow = CWRCWorkflowAPI::fromTemplate($object['WORKFLOW']);
-  //   CWRCWorkflowAPI::updateDatastream($workflow, $object);
-  // }
-  // else {
-  //   $workflow = CWRCWorkflowAPI::fromDatastream($object['WORKFLOW']);
-  // }
 
   // TRUE because struggling with ajax isn't worth it.
   $form['#tree'] = TRUE;
   $form['islandora_object_table'] = array(
     '#header' => $header,
     '#type' => 'tableselect',
+    '#title' => t('Objects'),
     '#options' => $rows,
     '#attributes' => array('class' => array('islandora-stamp-solr-results')),
     '#empty' => t('No results found.'),
@@ -129,10 +122,37 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
 
   $form['islandora_stamp_table'] = array(
     '#type' => 'tableselect',
+    '#title' => t('Stamps'),
     '#header' => $header,
     '#options' => $options,
     '#attributes' => array(),
     '#empty' => t("There are no stamps."),
+  );
+
+  $assigned_categories = drupal_map_assoc(array_values(AssignedCategory::getAllConstants()));
+  $assigned_categories[NULL] = "Select";
+
+  $form['islandora_categories_table'] = array(
+    '#type' => 'select',
+    '#title' => t('Category'),
+    '#header' => $header,
+    '#required' => TRUE,
+    '#options' => $assigned_categories,
+  );
+
+  $status_arr = array(
+    NULL => t('Select'),
+    'c' => t('Complete'),
+    'ipr' => t('In Progress'),
+    'p' => t('Pending'),
+    'i' => t('Incomplete'),
+  );
+
+  $form['islandora_status_table'] = array(
+    '#type' => 'select',
+    '#title' => t('Status'),
+    '#required' => TRUE,
+    '#options' => $status_arr,
   );
 
   if (count($rows) > 0) {
@@ -164,6 +184,7 @@ function cwrc_dashboards_xquery_inputs_ajax($form, $form_state) {
 function cwrc_dashboards_results_form_submit(array $form, array &$form_state) {
   module_load_include('inc', 'islandora_workflow_rest', 'includes/basic_enum');
   module_load_include('inc', 'islandora_workflow_rest', 'includes/utilities');
+  module_load_include('inc', 'islandora_workflow_rest', 'includes/workflow_item');
 
   if(!empty($form['islandora_object_table']['#value'])) {
     $pids = $form['islandora_object_table']['#value'];
@@ -177,10 +198,11 @@ function cwrc_dashboards_results_form_submit(array $form, array &$form_state) {
     $stamps = NULL;
   }
 
+  $category = $form['islandora_categories_table']['#value'];
+  $status = $form['islandora_status_table']['#value'];
 
   foreach ($pids as $pid) {
     $object = islandora_object_load($pid);
-
 
     if (!isset($object['WORKFLOW'])) {
       $workflow = CWRCWorkflowAPI::fromTemplate();
@@ -189,10 +211,15 @@ function cwrc_dashboards_results_form_submit(array $form, array &$form_state) {
     else {
       $workflow = CWRCWorkflowAPI::fromDatastream($object['WORKFLOW']);
     }
-    kpr($workflow);
     foreach ($stamps as $sid => $stamp) {
 
       $activity_params = array();
+
+      $activity_params['category'] = $category;
+      $activity_params['stamp'] = $stamps[$sid];
+      $activity_params['status'] = $status;
+
+      $activity = new WorkflowItem(WorkflowConst::ACTIVITY, $activity_params);
 
       $entry = new WorkflowItem(WorkflowConst::WORKFLOW, array('toolID' => ""));
       $last_workflow = $workflow->entryToArray();
@@ -202,24 +229,10 @@ function cwrc_dashboards_results_form_submit(array $form, array &$form_state) {
       else {
         $last_wf_string = "";
       }
-      $workflow->addWorkflowStep($islandora_object->id, $entry);
-      kpr($workflow);
+      $workflow->addWorkflowStep($object->id, $entry, $activity, NULL);
 
-      CWRCWorkflowAPI::updateDatastream($workflow, $islandora_object);
+      CWRCWorkflowAPI::updateDatastream($workflow, $object);
     }
   }
-  // // Set batch.
-  // batch_set(array(
-  //   'title' => t('Running Stamping process'),
-  //   'finished' => 'cwrc_dashboards_run_query_batch_finished',
-  //   'progress_message' => t('Time elapsed: @elapsed <br/>Estimated time remaining @estimate.'),
-  //   'error_message' => t('An error has occurred.'),
-  //   'file' => drupal_get_path('module', 'cwrc_workflow') . '/includes/stamp_solr_results.inc',
-  //   'operations' => array(
-  //     array(
-  //       'cwrc_dashboards_results_run_query_batch_operation',
-  //       array($pids, $stamps),
-  //     ),
-  //   ),
-  // ));
+  drupal_set_message(t('Workflow stamps have been applied to the objects'), 'status', FALSE);
 }
