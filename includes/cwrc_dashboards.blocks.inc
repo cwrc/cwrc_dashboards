@@ -76,7 +76,7 @@ function cwrc_dashboards_user_privatemsg_block() {
 
     // Build the rows.
     if ($thread->last_updated != NULL && $thread->last_updated != FALSE) {
-      $date = format_date(intval($thread->last_updated), 'medium', '', TIMEZONE_OFFSET);
+      $date = format_date(intval($thread->last_updated));
     }
     else {
       $date = "";
