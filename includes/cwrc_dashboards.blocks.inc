@@ -1,5 +1,12 @@
 <?php
 
+/* Timezone Offset
+ * When we get the dates/times, it has a timezone baked into it.
+ * In order to show the right time, we have to format the time with this timezone
+ * offset.
+ */
+define('TIMEZONE_OFFSET', -4);
+
 /**
  * @file
  * Define dashboard blocks.
@@ -208,7 +215,7 @@ function cwrc_dashboards_user_assigned_to_me_block() {
     // Build the row.
     $time = strtotime($document['workflow_date_current_dt']);
     if ($time != NULL && $time != FALSE) {
-      $date = format_date(intval($time));
+      $date = format_date(intval($time), 'medium', '', TIMEZONE_OFFSET);
     }
     else {
       $date = "";
@@ -375,7 +382,7 @@ function cwrc_dashboards_user_recently_edited_block() {
     // Build the row.
     $time = strtotime($document['workflow_date_current_dt']);
     if ($time != NULL && $time != FALSE) {
-      $date = format_date(intval($time));
+      $date = format_date(intval($time), 'medium', '', TIMEZONE_OFFSET);
     }
     else {
       $date = "";
@@ -624,7 +631,7 @@ function cwrc_dashboards_project_recently_edited_block() {
     // Build the row.
     $time = strtotime($document['workflow_date_current_dt']);
     if ($time != NULL && $time != FALSE) {
-      $date = format_date(intval($time));
+      $date = format_date(intval($time), 'medium', '', TIMEZONE_OFFSET);
     }
     else {
       $date = "";
@@ -915,7 +922,7 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
 
       $time = strtotime($document['RELS_EXT_lock-expiry_literal_s']);
       if ($time != NULL && $time != FALSE) {
-        $date = format_date(intval($time));
+        $date = format_date(intval($time), 'medium', '', TIMEZONE_OFFSET);
       }
       else {
         $date = "";
@@ -1000,7 +1007,7 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
 
       $time = strtotime($document['RELS_EXT_lock-expiry_literal_s']);
       if ($time != NULL && $time != FALSE) {
-        $date = format_date(intval($time));
+        $date = format_date(intval($time), 'medium', '', TIMEZONE_OFFSET);
       }
       else {
         $date = "";
