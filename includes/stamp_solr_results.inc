@@ -106,41 +106,34 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
     '#empty' => t('No results found.'),
   );
 
-  $options = array();
-
-  $results = islandora_workflow_rest_get_all_stamps(1000);
-
-  while ($data = $results->fetchObject()) {
-    $options[$data->stamp]['stamp'] = $data->stamp;
-    $options[$data->stamp]['descr'] = $data->descr;
-  }
-
-  $header = array(
+  $headers = array(
+    'select' => '',
     'stamp' => t('Name'),
     'descr' => t('Description'),
+    'category' => t('Category'),
+    'status' => t('Status'),
   );
 
+  // Start building the stamp table.
   $form['islandora_stamp_table'] = array(
-    '#type' => 'tableselect',
-    '#title' => t('Stamps'),
-    '#header' => $header,
-    '#options' => $options,
-    '#attributes' => array(),
-    '#empty' => t("There are no stamps."),
+    '#theme' => 'table',
+    '#rows' => array(),
+    '#header' => $headers,
+    '#tree' => TRUE,
+    '#empty' => t('There are no stamps.'),
+    'rows' => array(
+      '#tree' => TRUE,
+    ),
   );
 
-  $assigned_categories = drupal_map_assoc(array_values(AssignedCategory::getAllConstants()));
-  $assigned_categories[NULL] = "Select";
-
-  $form['islandora_categories_table'] = array(
-    '#type' => 'select',
-    '#title' => t('Category'),
-    '#header' => $header,
-    '#required' => TRUE,
-    '#options' => $assigned_categories,
+  // Build category options.
+  $categories = array_merge(
+    array(NULL => t('Select')),
+    drupal_map_assoc(array_values(AssignedCategory::getAllConstants()))
   );
 
-  $status_arr = array(
+  // Build status options.
+  $statuses = array(
     NULL => t('Select'),
     'c' => t('Complete'),
     'ipr' => t('In Progress'),
@@ -148,12 +141,60 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
     'i' => t('Incomplete'),
   );
 
-  $form['islandora_status_table'] = array(
-    '#type' => 'select',
-    '#title' => t('Status'),
-    '#required' => TRUE,
-    '#options' => $status_arr,
-  );
+  // Iterate over workflow stamps and build form-based table.
+  foreach (islandora_workflow_rest_get_all_stamps(1000) as $stamp) {
+    $identifier = drupal_clean_css_identifier($stamp->stamp);
+    $select = array(
+      '#id' => 'select-' . $identifier,
+      '#type' => 'checkbox',
+      '#attributes' => array(
+        'class' => array('stamp-select'),
+      ),
+    );
+
+    $category = array(
+      '#id' => 'category-' . $identifier,
+      '#type' => 'select',
+      '#title' => t('Category'),
+      '#options' => $categories,
+      '#states' => array(
+        'visible' => array(
+          '#select-' . $identifier => array('checked' => TRUE),
+        ),
+      ),
+    );
+
+    $status = array(
+      '#id' => 'status-' . $identifier,
+      '#type' => 'select',
+      '#title' => t('Status'),
+      '#options' => $statuses,
+      '#states' => array(
+        'visible' => array(
+          '#select-' . $identifier => array('checked' => TRUE),
+        ),
+      ),
+    );
+
+    $form['islandora_stamp_table']['#rows'][] = array(
+      'select' => array('data' => &$select),
+      'stamp' => array('data' => $stamp->stamp),
+      'descr' => array('data' => $stamp->descr),
+      'category' => array('data' => &$category),
+      'status' => array('data' => &$status),
+    );
+
+    // Sneaky way to make embedded form elements work as expected.
+    $form['islandora_stamp_table']['rows'][$stamp->stamp] = array(
+      'select' => &$select,
+      'status' => &$status,
+      'category' => &$category,
+    );
+
+    unset($select);
+    unset($status);
+    unset($category);
+  }
 
   if (count($rows) > 0) {
     $form['stamp_controls'] = array(
@@ -163,6 +204,7 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
       ),
     );
   }
+
   return $form;
 }
 
@@ -171,6 +213,32 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
  */
 function cwrc_dashboards_xquery_inputs_ajax($form, $form_state) {
   return $form['stamp_controls']['stamp_inputs'];
+}
+
+/**
+ * Form validation callback, ensures status and category are filled out.
+ */
+function cwrc_dashboards_results_form_validate(array $form, array &$form_state) {
+  // Iterate over rows from table.
+  foreach ($form_state['values']['islandora_stamp_table']['rows'] as $stamp => $value) {
+    if ($value['select'] == 1) {
+      // Status should have a value.
+      if (empty($value['status'])) {
+        form_set_error(
+          'islandora_stamp_table][rows][' . $stamp . '][status',
+          t('You must select a status for "@stamp".', array('@stamp' => $stamp))
+        );
+      }
+
+      // Category should have a value.
+      if (empty($value['category'])) {
+        form_set_error(
+          'islandora_stamp_table][rows][' . $stamp . '][category',
+          t('You must select a category for "@stamp".', array('@stamp' => $stamp))
+        );
+      }
+    }
+  }
 }
 
 /**
@@ -186,51 +254,41 @@ function cwrc_dashboards_results_form_submit(array $form, array &$form_state) {
   module_load_include('inc', 'islandora_workflow_rest', 'includes/utilities');
   module_load_include('inc', 'islandora_workflow_rest', 'includes/workflow_item');
 
-  if(!empty($form['islandora_object_table']['#value'])) {
-    $pids = $form['islandora_object_table']['#value'];
-  } else {
-    $pids = NULL;
-  }
+  // Get values and filter PIDs.
+  $values = $form_state['values'];
+  $pids = array_filter($values['islandora_object_table']);
+  $stamps = array_filter($values['islandora_stamp_table']['rows'], function ($row) {
+    return ($row['select'] == 1);
+  });
 
-  if(!empty($form['islandora_stamp_table']['#value'])) {
-    $stamps = $form['islandora_stamp_table']['#value'];
-  } else {
-    $stamps = NULL;
-  }
-
-  $category = $form['islandora_categories_table']['#value'];
-  $status = $form['islandora_status_table']['#value'];
-
+  // Iterate over selected PIDs.
   foreach ($pids as $pid) {
-    $object = islandora_object_load($pid);
 
+    // Load object and the workflow datastream.
+    $object = islandora_object_load($pid);
     if (!isset($object['WORKFLOW'])) {
+      // Create the workflow datastream if required.
       $workflow = CWRCWorkflowAPI::fromTemplate();
       CWRCWorkflowAPI::updateDatastream($workflow, $object);
     }
     else {
       $workflow = CWRCWorkflowAPI::fromDatastream($object['WORKFLOW']);
     }
-    foreach ($stamps as $sid => $stamp) {
 
-      $activity_params = array();
+    // Iterate over stamps selected, applying to workflow datastream.
+    foreach ($stamps as $id => $stamp) {
 
-      $activity_params['category'] = $category;
-      $activity_params['stamp'] = $stamps[$sid];
-      $activity_params['status'] = $status;
+      // Setup params for applying the stamp.
+      $activity_params['stamp'] = $id;
+      $activity_params['category'] = $stamp['category'];
+      $activity_params['status'] = $stamp['status'];
 
+      // Build the workflow stamp to apply.
       $activity = new WorkflowItem(WorkflowConst::ACTIVITY, $activity_params);
-
       $entry = new WorkflowItem(WorkflowConst::WORKFLOW, array('toolID' => ""));
-      $last_workflow = $workflow->entryToArray();
-      if ($last_workflow) {
-        $last_wf_string = islandora_workflow_rest_prepare_workflow_string($last_workflow, "previous");
-      }
-      else {
-        $last_wf_string = "";
-      }
       $workflow->addWorkflowStep($object->id, $entry, $activity, NULL);
 
+      // Apply the stamp.
       CWRCWorkflowAPI::updateDatastream($workflow, $object);
     }
   }
