@@ -112,6 +112,7 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
     'descr' => t('Description'),
     'category' => t('Category'),
     'status' => t('Status'),
+    'note' => t('Note'),
   );
 
   // Start building the stamp table.
@@ -161,6 +162,9 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
         'visible' => array(
           '#select-' . $identifier => array('checked' => TRUE),
         ),
+        'required' => array(
+          '#select-' . $identifier => array('checked' => TRUE),
+        ),
       ),
     );
 
@@ -169,6 +173,20 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
       '#type' => 'select',
       '#title' => t('Status'),
       '#options' => $statuses,
+      '#states' => array(
+        'visible' => array(
+          '#select-' . $identifier => array('checked' => TRUE),
+        ),
+        'required' => array(
+          '#select-' . $identifier => array('checked' => TRUE),
+        ),
+      ),
+    );
+
+    $note = array(
+      '#id' => 'note-' . $identifier,
+      '#type' => 'textfield',
+      '#title' => t('Note'),
       '#states' => array(
         'visible' => array(
           '#select-' . $identifier => array('checked' => TRUE),
@@ -182,6 +200,7 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
       'descr' => array('data' => $stamp->descr),
       'category' => array('data' => &$category),
       'status' => array('data' => &$status),
+      'note' => array('data' => &$note),
     );
 
     // Sneaky way to make embedded form elements work as expected.
@@ -189,11 +208,13 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
       'select' => &$select,
       'status' => &$status,
       'category' => &$category,
+      'note' => &$note,
     );
 
     unset($select);
     unset($status);
     unset($category);
+    unset($note);
   }
 
   if (count($rows) > 0) {
@@ -282,6 +303,7 @@ function cwrc_dashboards_results_form_submit(array $form, array &$form_state) {
       $activity_params['stamp'] = $id;
       $activity_params['category'] = $stamp['category'];
       $activity_params['status'] = $stamp['status'];
+      $activity_params['note'] = $stamp['note'];
 
       // Build the workflow stamp to apply.
       $activity = new WorkflowItem(WorkflowConst::ACTIVITY, $activity_params);
