@@ -865,6 +865,9 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
 
   $wrapper = entity_metadata_wrapper('node', $node);
 
+  // Load islandora object lock utilities.
+  module_load_include('inc', 'islandora_object_lock', 'includes/utilities');
+
   // Get solarium client.
   $client = cwrc_dashboards_get_solarium();
 
@@ -879,7 +882,8 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
       "RELS_EXT_locked-by_literal_s",
       "RELS_EXT_lock-expiry_literal_s",
     ))
-    ->addSort('workflow_date_current_dt', $query::SORT_DESC);
+    ->addSort('workflow_date_current_dt', $query::SORT_DESC)
+    ->setRows(100);
 
   // Get query results.
   $results = $client->select($query);
@@ -910,7 +914,11 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
 
   // Fill rows with objects.
   foreach ($results as $document) {
-    if (isset($document['RELS_EXT_locked-by_literal_s'])) {
+
+    // Load the full object to check lock status.
+    $object = islandora_object_load($document['PID']);
+    if (islandora_object_lock_is_locked($object)
+      && isset($document['RELS_EXT_locked-by_literal_s'])) {
       $locked_by = user_load_by_name($document['RELS_EXT_locked-by_literal_s']);
 
       if ($locked_by != NULL && isset($locked_by->uid)) {
@@ -962,6 +970,9 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
   // Get solarium client.
   $client = cwrc_dashboards_get_solarium();
 
+  // Load islandora object lock utilities.
+  module_load_include('inc', 'islandora_object_lock', 'includes/utilities');
+
   // Build select query for assigned to me block.
   $query = $client->createSelect();
   $helper = $query->getHelper();
@@ -972,13 +983,13 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
       "RELS_EXT_locked-by_literal_s",
       "RELS_EXT_lock-expiry_literal_s",
     ))
-    ->addSort('workflow_date_current_dt', $query::SORT_DESC);
+    ->addSort('workflow_date_current_dt', $query::SORT_DESC)
+    ->setRows(100);
 
   // Get query results.
   $results = $client->select($query);
 
-
-  // // Build table select form element.
+  // Build table select form element.
   $form['objects'] = array(
     '#type' => 'tableselect',
     '#options' => array(),
@@ -1003,7 +1014,11 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
 
   // // Fill rows with objects.
   foreach ($results as $document) {
-    if (isset($document['RELS_EXT_locked-by_literal_s'])) {
+
+    // Load the full object to check lock status.
+    $object = islandora_object_load($document['PID']);
+    if (islandora_object_lock_is_locked($object)
+      && isset($document['RELS_EXT_locked-by_literal_s'])) {
 
       $time = strtotime($document['RELS_EXT_lock-expiry_literal_s']);
       if ($time != NULL && $time != FALSE) {
