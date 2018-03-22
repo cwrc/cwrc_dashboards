@@ -5,7 +5,7 @@
  * In order to show the right time, we have to format the time with this timezone
  * offset.
  */
-define('TIMEZONE_OFFSET', -4);
+define('TIMEZONE_OFFSET', "Eastern");
 
 /**
  * @file
