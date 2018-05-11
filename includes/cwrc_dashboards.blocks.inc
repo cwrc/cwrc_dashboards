@@ -1027,7 +1027,7 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
       '#type' => 'submit',
       '#executes_submit_callback' => TRUE,
       '#value' => t('Release selected locks'),
-      '#submit' => array('cwrc_dashboards_user_locked_objects_block_form_submit'),
+      '#submit' => array('cwrc_dashboards_project_locked_objects_block_form_submit'),
     );
   }
 
