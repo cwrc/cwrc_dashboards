@@ -868,7 +868,7 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
       "RELS_EXT_locked-by_literal_s",
       "RELS_EXT_lock-expiry_literal_s",
     ))
-    ->addSort('workflow_date_current_dt', $query::SORT_DESC)
+    ->addSort('fgs_lastModifiedDate_dt', $query::SORT_DESC)
     ->setRows(100);
 
   // Get query results.
