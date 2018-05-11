@@ -903,7 +903,7 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
 
     // Load the full object to check lock status.
     $object = islandora_object_load($document['PID']);
-    if (islandora_object_lock_is_locked($object)
+    if ($object && islandora_object_lock_is_locked($object)
       && isset($document['RELS_EXT_locked-by_literal_s'])) {
       $locked_by = user_load_by_name($document['RELS_EXT_locked-by_literal_s']);
 
@@ -927,7 +927,13 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
         'locked_by' => l($locked_by_name, 'user/' . $locked_by->uid),
         'expiry' => $date,
       );
-    }
+    } else {
+      $form['objects']['#options'][$document['PID']] = array(
+        'object' => l("access denied", 'islandora/object/' . $document['PID']),
+        'locked_by' => "",
+        'expiry' => "",
+      );
+   }
   }
 
   // Submit button (only if there are rows).
