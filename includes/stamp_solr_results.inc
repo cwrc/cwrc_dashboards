@@ -88,7 +88,7 @@ function cwrc_dashboards_results_form($form, &$form_state, $object_results, $sol
   foreach ($object_results as $object_result) {
     $rows[$object_result['PID']] = array(
       'markup' => l(
-          isset($object_result['solr_doc'][$label_field]) ? $object_result['solr_doc'][$label_field] : $object_result['PID'], $object_result['object_url']
+          isset($object_result['solr_doc'][$label_field]) ? $object_result['solr_doc'][$label_field] . ' (' . $object_result['PID'] . ') ' : $object_result['PID'], $object_result['object_url']
       ),
       'pid' => $object_result['PID'],
     );
