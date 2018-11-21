@@ -888,7 +888,6 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
   // Get query results.
   $results = $client->select($query);
 
-  $form['#validate'] = array('cwrc_dashboards_project_locked_objects_block_validate');
   // Build table select form element.
   $form['objects'] = array(
     '#type' => 'tableselect',
@@ -963,20 +962,6 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
 
   // Return render array.
   return $form;
-}
-
-/**
- * Validate if the object is already unlocked.
- */
-function cwrc_dashboards_project_locked_objects_block_validate(&$form, &$form_state) {
-  $options = $form['objects']['#options'];
-
-  $values = $form_state['values']['objects'];
-  foreach ($values as $v) {
-    if (!isset($options[$v])) {
-      form_set_error('objects', t('One or more of your objects was already unlocked so no further changes have been made. Please refresh the page.'));
-    }
-  }
 }
 
 /**
