@@ -452,8 +452,9 @@ function cwrc_dashboards_project_locked_objects_block_form_submit($form, &$form_
 
   $values = array_filter($form_state['values']['objects']);
   foreach ($values as $pid => $value) {
+    $object = islandora_object_load($pid);
     // Add selected items to batch.
-    if (!empty($value)) {
+    if (!islandora_object_lock_is_locked($object) && !empty($value)) {
       $batch['operations'][] = array('islandora_object_lock_remove_object_lock', array($pid));
     }
   }
