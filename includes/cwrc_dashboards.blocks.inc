@@ -730,6 +730,20 @@ function cwrc_dashboards_project_utilities_block() {
     );
   }
 
+  $options = array(
+    'query' => array(
+      'display' => 'stamp',
+      'f' => array(
+        'ancestors_ms:"' . Apache_Solr_Service::escape($pid) . '"',
+      ),
+    ),
+  );
+
+  $build['#items'][] = array(
+    'data' => l(t('Stamp objects'), 'islandora/search', $options),
+    'class' => array('cwrc-dashboards-project-utility-block', 'find-replace'),
+  );
+
   // Back-up/download project menu link. This functionality is provided by the
   // islandora_bagit contrib module, so we check whether that module exists
   // before linking to it.
@@ -884,7 +898,7 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
       'locked_by' => t('Locked by'),
       'expiry' => t('Expiry'),
     ),
-
+    '#validated' => TRUE,
     // Add class flagging this as a "read more" candidate.
     '#attributes' => array(
       'class' => array(

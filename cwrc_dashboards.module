@@ -450,9 +450,11 @@ function cwrc_dashboards_project_locked_objects_block_form_submit($form, &$form_
     'progress_message' => t('Processed @current out of @total.'),
   );
 
-  foreach ($form_state['values']['objects'] as $pid => $value) {
+  $values = array_filter($form_state['values']['objects']);
+  foreach ($values as $pid => $value) {
+    $object = islandora_object_load($pid);
     // Add selected items to batch.
-    if (!empty($value)) {
+    if (!islandora_object_lock_is_locked($object) && !empty($value)) {
       $batch['operations'][] = array('islandora_object_lock_remove_object_lock', array($pid));
     }
   }
@@ -654,5 +656,18 @@ function cwrc_dashboards_project_dashboard_homepage($node_display , $fedora_obje
   } else {
     drupal_goto('');
   }
+}
+
+function cwrc_dashboards_islandora_solr_primary_display() {
+  return array(
+    'stamp' => array(
+      'name' => t('Stamp'),
+      'module' => 'cwrc_dashboards',
+      'file' => 'includes/stamp_solr_results.inc',
+      'class' => 'IslandoraSolrResultsStamp',
+      'function' => 'displayResults',
+      'description' => t('Search results for performing an Object stamp operation.'),
+    ),
+  );
 }
 
