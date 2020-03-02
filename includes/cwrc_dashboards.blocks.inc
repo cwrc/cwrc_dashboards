@@ -5,7 +5,7 @@
  * In order to show the right time, we have to format the time with this timezone
  * offset.
  */
-define('TIMEZONE_OFFSET', "Eastern");
+define('TIMEZONE_OFFSET', "Atlantic/Reykjavik");
 
 /**
  * @file
@@ -1023,6 +1023,7 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
 
     // Load the full object to check lock status.
     $object = islandora_object_load($document['PID']);
+    if ($object != NULL && $object != FALSE) {
     if (islandora_object_lock_is_locked($object)
       && isset($document['RELS_EXT_locked-by_literal_s'])) {
 
@@ -1038,8 +1039,8 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
         'object' => l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
         'expiry' => $date,
       );
-    }
-  }
+    }} else { watchdog('bradmodule', '<pre>Dumping @variable </pre>', array('@variable' => print_r($document['PID'], true)));
+  }}
 
   // Submit button (only if there are rows).
   if (count($form['objects']['#options']) > 0) {
