@@ -35,29 +35,29 @@ function cwrc_dashboards_user_privatemsg_block() {
   }
 
   // Build table render array.
-  $build = array(
-    'table' => array(
+  $build = [
+    'table' => [
       '#theme' => 'table',
-      '#rows' => array(),
-      '#header' => array(
+      '#rows' => [],
+      '#header' => [
         t('Subject'),
         t('Participants'),
         t('Received on'),
-      ),
-    ),
-    'link' => array(
+      ],
+    ],
+    'link' => [
       '#markup' => '<span class="view-all-messages">' . l(t('View all messages'), 'messages') . '</a></span>',
-    ),
-    'new-link' => array(
+    ],
+    'new-link' => [
       '#markup' => '<span class="compose-new-message">' . l(t('New message'), 'messages/new') . '</a></span>',
-    ),
-  );
+    ],
+  ];
 
   // Fill rows with messages.
   foreach ($threads as $thread) {
     // Get participants and build display.
     $participants = privatemsg_sql_participants($thread->thread_id, $user)->execute();
-    $participant_output = array();
+    $participant_output = [];
 
     foreach ($participants as $participant) {
       if ($participant->recipient != $user->uid) {
@@ -81,14 +81,14 @@ function cwrc_dashboards_user_privatemsg_block() {
     else {
       $date = "";
     }
-    $build['table']['#rows'][] = array(
-      'class' => ($thread->is_new) ? array('is-new') : array(),
-      'data' => array(
-        l(filter_xss(decode_entities($thread->subject), array()), 'messages/view/' . $thread->thread_id),
+    $build['table']['#rows'][] = [
+      'class' => ($thread->is_new) ? ['is-new'] : [],
+      'data' => [
+        l(filter_xss(decode_entities($thread->subject), []), 'messages/view/' . $thread->thread_id),
         implode(', ', $participant_output),
         $date,
-      ),
-    );
+      ],
+    ];
   }
 
   // Return render array.
@@ -109,7 +109,7 @@ function cwrc_dashboards_user_assigned_to_me_block() {
   $query = $client->createSelect();
   $helper = $query->getHelper();
   $query->setQuery('workflow_assigned_message_recipient_userID_current_ms:(' . $helper->escapePhrase($user->name) . ')')
-    ->setFields(array(
+    ->setFields([
       "PID",
       "fgs_label_s",
       "RELS_EXT_lock-expiry_literal_s",
@@ -120,7 +120,7 @@ function cwrc_dashboards_user_assigned_to_me_block() {
       "workflow_date_current_dt",
       "workflow_assigned_category_current_ms",
       "workflow_assigned_note_current_ms",
-    ))
+    ])
     ->addSort('workflow_date_current_dt', $query::SORT_DESC);
 
   // Get query results.
@@ -132,10 +132,10 @@ function cwrc_dashboards_user_assigned_to_me_block() {
   }
 
   // Build table render array.
-  $build = array(
+  $build = [
     '#theme' => 'table',
-    '#rows' => array(),
-    '#header' => array(
+    '#rows' => [],
+    '#header' => [
       '',
       t('Object'),
       '',
@@ -143,8 +143,8 @@ function cwrc_dashboards_user_assigned_to_me_block() {
       t('Assigned by'),
       t('Category'),
       t('Note'),
-    ),
-  );
+    ],
+  ];
 
   // Fill rows with objects.
   foreach ($results as $document) {
@@ -189,13 +189,13 @@ function cwrc_dashboards_user_assigned_to_me_block() {
       // Get the logo, hide project if no logo is present.
       $logo = $wrapper->field_logo->value();
       if ($logo !== NULL) {
-        $logo = theme('image_style', array(
+        $logo = theme('image_style', [
           'style_name' => 'icon',
           'path' => $logo['uri'],
           'width' => $logo['metadata']['width'],
           'height' => $logo['metadata']['height'],
           'alt' => (empty($logo['alt'])) ? $wrapper->title_field->value() : $logo['alt'],
-        ));
+        ]);
       }
       else {
         $project = FALSE;
@@ -221,44 +221,44 @@ function cwrc_dashboards_user_assigned_to_me_block() {
       $date = "";
     }
 
-    $build['#rows'][] = array(
+    $build['#rows'][] = [
       // Add a class for workflow stamp styling.
-      'class' => array('cwrc-workflow-' . $document['workflow_activity_category_current_ms'][0]),
+      'class' => ['cwrc-workflow-' . $document['workflow_activity_category_current_ms'][0]],
 
       // Build the columns.
-      'data' => array(
+      'data' => [
         // Project logo (if available).
-        ($project !== FALSE) ? l($logo, $project_uri['path'], array('html' => TRUE)) : '',
+        ($project !== FALSE) ? l($logo, $project_uri['path'], ['html' => TRUE]) : '',
 
         // Object link.
         l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
 
         // Lock status.
-        array(
-          'class' => array($locked, 'object-locked-column'),
-          'data' => array(
-            array(
+        [
+          'class' => [$locked, 'object-locked-column'],
+          'data' => [
+            [
               '#type' => 'html_tag',
               '#tag' => 'span',
-              '#attributes' => array('class' => $locked),
+              '#attributes' => ['class' => $locked],
               '#value' => '',
-            ),
-            array(
+            ],
+            [
               '#type' => 'html_tag',
               '#tag' => 'span',
-              '#attributes' => array('class' => 'hide-txt'),
+              '#attributes' => ['class' => 'hide-txt'],
               '#value' => $locked_message,
-            ),
-          ),
-        ),
+            ],
+          ],
+        ],
 
         // Time assigned, assigned by and stamp.
         (isset($document['workflow_date_current_dt']) ? $date : ''),
         l($assigned_by_name, 'user/' . $assigned_by->uid),
         $document['workflow_assigned_category_current_ms'][0],
         $document['workflow_assigned_note_current_ms'][0],
-      ),
-    );
+      ],
+    ];
   }
 
   // Add class flagging this as a "read more" candidate.
@@ -286,7 +286,7 @@ function cwrc_dashboards_user_recently_edited_block() {
   $query = $client->createSelect();
   $helper = $query->getHelper();
   $query->setQuery('workflow_userID_current_ms:(' . $helper->escapePhrase($user->name) . ')')
-    ->setFields(array(
+    ->setFields([
       "PID",
       "fgs_label_s",
       "RELS_EXT_lock-expiry_literal_s",
@@ -296,7 +296,7 @@ function cwrc_dashboards_user_recently_edited_block() {
       "workflow_date_current_dt",
       "workflow_activity_note_current_ms",
       "workflow_activity_status_current_ms",
-    ))
+    ])
     ->addSort('workflow_date_current_dt', $query::SORT_DESC)
     ->setRows(100);
 
@@ -309,10 +309,10 @@ function cwrc_dashboards_user_recently_edited_block() {
   }
 
   // Build table render array.
-  $build = array(
+  $build = [
     '#theme' => 'table',
-    '#rows' => array(),
-    '#header' => array(
+    '#rows' => [],
+    '#header' => [
       '',
       t('Object'),
       '',
@@ -320,8 +320,8 @@ function cwrc_dashboards_user_recently_edited_block() {
       t('Category'),
       t('Status'),
       t('Note'),
-    ),
-  );
+    ],
+  ];
 
   // Fill rows with objects.
   foreach ($results as $document) {
@@ -366,13 +366,13 @@ function cwrc_dashboards_user_recently_edited_block() {
       // Get the logo, hide project if no logo is present.
       $logo = $wrapper->field_logo->value();
       if ($logo !== NULL) {
-        $logo = theme('image_style', array(
+        $logo = theme('image_style', [
           'style_name' => 'icon',
           'path' => $logo['uri'],
           'width' => $logo['metadata']['width'],
           'height' => $logo['metadata']['height'],
           'alt' => (empty($logo['alt'])) ? $wrapper->title_field->value() : $logo['alt'],
-        ));
+        ]);
       }
       else {
         $project = FALSE;
@@ -388,44 +388,44 @@ function cwrc_dashboards_user_recently_edited_block() {
       $date = "";
     }
 
-    $build['#rows'][] = array(
+    $build['#rows'][] = [
       // Add a class for workflow stamp styling.
-      'class' => array('cwrc-workflow-' . $document['workflow_activity_category_current_ms'][0]),
+      'class' => ['cwrc-workflow-' . $document['workflow_activity_category_current_ms'][0]],
 
       // Build the columns.
-      'data' => array(
+      'data' => [
         // Project logo (if available).
-        ($project !== FALSE) ? l($logo, $project_uri['path'], array('html' => TRUE)) : '',
+        ($project !== FALSE) ? l($logo, $project_uri['path'], ['html' => TRUE]) : '',
 
         // Object link.
         l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
 
         // Lock status.
-        array(
-          'class' => array($locked, 'object-locked-column'),
-          'data' => array(
-            '0' => array(
+        [
+          'class' => [$locked, 'object-locked-column'],
+          'data' => [
+            '0' => [
               '#type' => 'html_tag',
               '#tag' => 'span',
-              '#attributes' => array('class' => $locked),
+              '#attributes' => ['class' => $locked],
               '#value' => '',
-            ),
-            '1' => array(
+            ],
+            '1' => [
               '#type' => 'html_tag',
               '#tag' => 'span',
-              '#attributes' => array('class' => 'hide-txt'),
+              '#attributes' => ['class' => 'hide-txt'],
               '#value' => $locked_message,
-            ),
-          ),
-        ),
+            ],
+          ],
+        ],
 
         // Assigned, project, time changed, stamp and category.
         (isset($document['workflow_date_current_dt']) ? $date : ''),
         $document['workflow_activity_category_current_ms'][0],
         $document['workflow_activity_status_current_ms'][0],
         $document['workflow_activity_note_current_ms'][0],
-      ),
-    );
+      ],
+    ];
   }
 
   // Add class flagging this as a "read more" candidate.
@@ -457,7 +457,7 @@ function cwrc_dashboards_user_bookmark_lists_block() {
 
   // Get bookmark lists shared with the current user (exclude owned lists).
   $query = db_select('islandora_bookmark_list_users', 'ibu')
-    ->condition('ibu.uid', array(0, $user->uid), 'IN');
+    ->condition('ibu.uid', [0, $user->uid], 'IN');
   if (count($owned) > 0) {
     $query->condition('ibu.listid', array_keys($owned), 'NOT IN');
   }
@@ -469,11 +469,11 @@ function cwrc_dashboards_user_bookmark_lists_block() {
   $shared = $query->execute()->fetchAllAssoc('listid', PDO::FETCH_ASSOC);
 
   // Pass to template for easier manipulation.
-  return array(
+  return [
     '#theme' => 'cwrc_dashboards_user_bookmark_lists_block',
     '#owned' => $owned,
     '#shared' => $shared,
-  );
+  ];
 }
 
 /**
@@ -486,10 +486,10 @@ function cwrc_dashboards_user_workflow_reports_block() {
   module_load_include('inc', 'islandora_workflow_rest', 'includes/report_utilities');
   $reports = islandora_workflow_rest_get_all_records();
 
-  $build = array(
+  $build = [
     '#theme' => 'cwrc_dashboards_workflow_reports_block',
-    '#reports' => array(),
-  );
+    '#reports' => [],
+  ];
 
   // Build items for list.
   foreach ($reports as $report) {
@@ -503,11 +503,21 @@ function cwrc_dashboards_user_workflow_reports_block() {
 
     // View access is granted.
     if (count($view) > 0 || count($edit) > 0) {
-      $item['view'] = l($report['name'], "islandora/search/" . $report['query'], array('query' => array('workflow_report' => $report['lid'], 'display' => 'cwrc_report')));
+      $item['view'] = l($report['name'], "islandora/search/" . $report['query'], [
+        'query' => [
+          'workflow_report' => $report['lid'],
+          'display' => 'cwrc_report',
+        ],
+      ]);
 
       // Edit access is granted.
       if (count($edit) > 0) {
-        $item['edit'] = url("islandora_workflow_rest/reports", array('query' => array('lid' => $report['lid'], 'action' => 'edit')));
+        $item['edit'] = url("islandora_workflow_rest/reports", [
+          'query' => [
+            'lid' => $report['lid'],
+            'action' => 'edit',
+          ],
+        ]);
         $item['delete'] = url("islandora_workflow_rest/delete_report/{$report['lid']}/{$report['name']}");
       }
 
@@ -548,7 +558,7 @@ function cwrc_dashboards_project_recently_edited_block() {
   $query = $client->createSelect();
   $helper = $query->getHelper();
   $query->setQuery('ancestors_ms:' . $helper->escapePhrase($wrapper->{CWRC_PROJECTS_COLLECTION_PID_FIELD}->value()->id))
-    ->setFields(array(
+    ->setFields([
       "PID",
       "fgs_label_s",
       "RELS_EXT_lock-expiry_literal_s",
@@ -559,7 +569,7 @@ function cwrc_dashboards_project_recently_edited_block() {
       "workflow_activity_status_current_ms",
       "workflow_activity_stamp_current_ms",
       "workflow_userID_current_ms",
-    ))
+    ])
     ->addSort('workflow_date_current_dt', $query::SORT_DESC)
     ->setRows(100);
 
@@ -572,18 +582,18 @@ function cwrc_dashboards_project_recently_edited_block() {
   }
 
   // Build table render array.
-  $build = array(
+  $build = [
     '#theme' => 'table',
-    '#rows' => array(),
-    '#header' => array(
+    '#rows' => [],
+    '#header' => [
       t('Object'),
       '',
       t('User'),
       t('Time changed'),
       t('Status'),
       t('Category'),
-    ),
-  );
+    ],
+  ];
 
   // Fill rows with objects.
   foreach ($results as $document) {
@@ -637,39 +647,39 @@ function cwrc_dashboards_project_recently_edited_block() {
       $date = "";
     }
 
-    $build['#rows'][] = array(
+    $build['#rows'][] = [
       // Add a class for workflow stamp styling.
-      'class' => array('cwrc-workflow-' . $document['workflow_activity_category_current_ms'][0]),
+      'class' => ['cwrc-workflow-' . $document['workflow_activity_category_current_ms'][0]],
 
       // Build the columns.
-      'data' => array(
+      'data' => [
         // Object assigned, project, time changed, stamp and category.
         l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
 
         // Lock status.
-        array(
-          'class' => array($locked, 'object-locked-column'),
-          'data' => array(
-            '0' => array(
+        [
+          'class' => [$locked, 'object-locked-column'],
+          'data' => [
+            '0' => [
               '#type' => 'html_tag',
               '#tag' => 'span',
-              '#attributes' => array('class' => $locked),
+              '#attributes' => ['class' => $locked],
               '#value' => '',
-            ),
-            '1' => array(
+            ],
+            '1' => [
               '#type' => 'html_tag',
               '#tag' => 'span',
-              '#attributes' => array('class' => 'hide-txt'),
+              '#attributes' => ['class' => 'hide-txt'],
               '#value' => $locked_message,
-            ),
-          ),
-        ),
+            ],
+          ],
+        ],
         ($assigned_by) ? l($assigned_by_name, 'user/' . $assigned_by->uid) : t('Unknown'),
         (isset($document['workflow_date_current_dt']) ? $date : ''),
         $document['workflow_activity_status_current_ms'][0],
         $document['workflow_activity_category_current_ms'][0],
-      ),
-    );
+      ],
+    ];
   }
 
   // Add class flagging this as a "read more" candidate and attach js.
@@ -698,60 +708,60 @@ function cwrc_dashboards_project_utilities_block() {
   $nid = $wrapper->getIdentifier();
 
   // Start the render array for output (will render as a list).
-  $build = array(
+  $build = [
     '#theme' => 'item_list',
     '#type' => 'ul',
-    '#items' => array(),
-    '#attributes' => array(
-      'class' => array(
+    '#items' => [],
+    '#attributes' => [
+      'class' => [
         'cwrc-dashboard-utilities-list',
         'list-group',
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 
   // Options with query for find and replace link.
-  $options = array(
-    'query' => array(
+  $options = [
+    'query' => [
       'display' => 'xquery',
-      'f' => array(
+      'f' => [
         'ancestors_ms:"' . Apache_Solr_Service::escape($pid) . '"',
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 
   // Find and replace utility link. This functionality is provided by the
   // islandora_solr contrib module, so we chech whether that module exists
   // before linking to it.
   if (module_exists('islandora_solr') && og_user_access($group_entity_type, $nid, 'find and replace in project') === TRUE) {
-    $build['#items'][] = array(
+    $build['#items'][] = [
       'data' => l(t('Find and Replace'), 'islandora/search', $options),
-      'class' => array('cwrc-dashboards-project-utility-block', 'find-replace'),
-    );
+      'class' => ['cwrc-dashboards-project-utility-block', 'find-replace'],
+    ];
   }
 
-  $options = array(
-    'query' => array(
+  $options = [
+    'query' => [
       'display' => 'stamp',
-      'f' => array(
+      'f' => [
         'ancestors_ms:"' . Apache_Solr_Service::escape($pid) . '"',
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 
-  $build['#items'][] = array(
+  $build['#items'][] = [
     'data' => l(t('Stamp objects'), 'islandora/search', $options),
-    'class' => array('cwrc-dashboards-project-utility-block', 'find-replace'),
-  );
+    'class' => ['cwrc-dashboards-project-utility-block', 'find-replace'],
+  ];
 
   // Back-up/download project menu link. This functionality is provided by the
   // islandora_bagit contrib module, so we check whether that module exists
   // before linking to it.
   if (module_exists('islandora_bagit') && og_user_access($group_entity_type, $nid, 'back-up project with islandora_bagit')) {
-    $build['#items'][] = array(
-      'data' => l(t('Back-up/Download'), "islandora/object/$pid/manage/bagit", array('query' => array('destination' => $_GET['q']))),
-      'class' => array('cwrc-dashboards-project-utility-block', 'back-up'),
-    );
+    $build['#items'][] = [
+      'data' => l(t('Back-up/Download'), "islandora/object/$pid/manage/bagit", ['query' => ['destination' => $_GET['q']]]),
+      'class' => ['cwrc-dashboards-project-utility-block', 'back-up'],
+    ];
   }
 
   // Edit project menu link. Note this intentionally checks a permission
@@ -759,10 +769,10 @@ function cwrc_dashboards_project_utilities_block() {
   // defined by the same module. See og_menu_single_og_permission() and
   // og_menu_single_menu().
   if (module_exists('og_menu_single') && og_user_access($group_entity_type, $nid, 'manage menu')) {
-    $build['#items'][] = array(
+    $build['#items'][] = [
       'data' => l(t('Edit project menu'), "group/node/$nid/admin/menu"),
-      'class' => array('cwrc-dashboards-project-utility-block', 'edit-menu'),
-    );
+      'class' => ['cwrc-dashboards-project-utility-block', 'edit-menu'],
+    ];
   }
 
   // Add page to project link. Note this intentionally checks a permission
@@ -772,19 +782,19 @@ function cwrc_dashboards_project_utilities_block() {
   // machine name of a particular node type; the original permission is actually
   // "create $type content".
   if (og_user_access($group_entity_type, $nid, 'create page content')) {
-    $build['#items'][] = array(
-      'data' => l(t('Add page to project'), "node/add/page", array('query' => array('og_group_ref' => $nid))),
-      'class' => array('cwrc-dashboards-project-utility-block', 'add-page'),
-    );
+    $build['#items'][] = [
+      'data' => l(t('Add page to project'), "node/add/page", ['query' => ['og_group_ref' => $nid]]),
+      'class' => ['cwrc-dashboards-project-utility-block', 'add-page'],
+    ];
   }
 
   // Edit project homepage link. Since this links to the edit node page for the
   // group, we use node_access() to check permissions.
   if (node_access('update', $wrapper->value())) {
-    $build['#items'][] = array(
-      'data' => l(t('Edit project homepage'), "node/$nid/edit", array('query' => array('destination' => current_path()))),
-      'class' => array('cwrc-dashboards-project-utility-block', 'edit-settings'),
-    );
+    $build['#items'][] = [
+      'data' => l(t('Edit project homepage'), "node/$nid/edit", ['query' => ['destination' => current_path()]]),
+      'class' => ['cwrc-dashboards-project-utility-block', 'edit-settings'],
+    ];
   }
 
   // Return the finished render array.
@@ -809,10 +819,10 @@ function cwrc_dashboards_project_workflow_reports_block() {
   module_load_include('inc', 'islandora_workflow_rest', 'includes/report_utilities');
   $reports = islandora_workflow_rest_get_all_records();
 
-  $build = array(
+  $build = [
     '#theme' => 'cwrc_dashboards_workflow_reports_block',
-    '#reports' => array(),
-  );
+    '#reports' => [],
+  ];
 
   // Build items for list.
   foreach ($reports as $report) {
@@ -828,11 +838,21 @@ function cwrc_dashboards_project_workflow_reports_block() {
 
       if (count($view) > 0 || count($edit) > 0) {
         // View link.
-        $item['view'] = l($report['name'], "islandora/search/" . $report['query'], array('query' => array('workflow_report' => $report['lid'], 'display' => 'cwrc_report')));
+        $item['view'] = l($report['name'], "islandora/search/" . $report['query'], [
+          'query' => [
+            'workflow_report' => $report['lid'],
+            'display' => 'cwrc_report',
+          ],
+        ]);
 
         // Edit button.
         if (count($edit) > 0 && og_user_access($group_type, $gid, 'edit workflow reports from workflow reports block')) {
-          $item['edit'] = url("islandora_workflow_rest/reports", array('query' => array('lid' => $report['lid'], 'action' => 'edit')));
+          $item['edit'] = url("islandora_workflow_rest/reports", [
+            'query' => [
+              'lid' => $report['lid'],
+              'action' => 'edit',
+            ],
+          ]);
         }
 
         // Delete button.
@@ -875,13 +895,13 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
   $query = $client->createSelect();
   $helper = $query->getHelper();
   $query->setQuery('ancestors_ms:' . $helper->escapePhrase($wrapper->{CWRC_PROJECTS_COLLECTION_PID_FIELD}->value()->id) . ' AND RELS_EXT_lock-expiry_literal_s:[* TO *]')
-    ->setFields(array(
+    ->setFields([
       "PID",
       "fgs_label_s",
       "RELS_EXT_locked-by_literal_s",
       "RELS_EXT_locked-by_literal_s",
       "RELS_EXT_lock-expiry_literal_s",
-    ))
+    ])
     ->addSort('fgs_lastModifiedDate_dt', $query::SORT_DESC)
     ->setRows(100);
 
@@ -889,28 +909,28 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
   $results = $client->select($query);
 
   // Build table select form element.
-  $form['objects'] = array(
+  $form['objects'] = [
     '#type' => 'tableselect',
-    '#options' => array(),
+    '#options' => [],
     '#empty' => t('No locked objects in your project.'),
-    '#header' => array(
+    '#header' => [
       'object' => t('Object'),
       'locked_by' => t('Locked by'),
       'expiry' => t('Expiry'),
-    ),
+    ],
     '#validated' => TRUE,
     // Add class flagging this as a "read more" candidate.
-    '#attributes' => array(
-      'class' => array(
+    '#attributes' => [
+      'class' => [
         'read-more',
-      ),
-    ),
-    '#attached' => array(
-      'js' => array(
+      ],
+    ],
+    '#attached' => [
+      'js' => [
         drupal_get_path('module', 'cwrc_dashboards') . '/js/read-more.js',
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 
   // Fill rows with objects.
   foreach ($results as $document) {
@@ -936,28 +956,29 @@ function cwrc_dashboards_project_locked_objects_block_form($form, &$form_state) 
         $date = "";
       }
 
-      $form['objects']['#options'][$document['PID']] = array(
+      $form['objects']['#options'][$document['PID']] = [
         'object' => l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
         'locked_by' => l($locked_by_name, 'user/' . $locked_by->uid),
         'expiry' => $date,
-      );
-    } else {
-      $form['objects']['#options'][$document['PID']] = array(
+      ];
+    }
+    else {
+      $form['objects']['#options'][$document['PID']] = [
         'object' => l("access denied", 'islandora/object/' . $document['PID']),
         'locked_by' => "",
         'expiry' => "",
-      );
-   }
+      ];
+    }
   }
 
   // Submit button (only if there are rows).
   if (count($form['objects']['#options']) > 0) {
-    $form['submit'] = array(
+    $form['submit'] = [
       '#type' => 'submit',
       '#executes_submit_callback' => TRUE,
       '#value' => t('Release selected locks'),
-      '#submit' => array('cwrc_dashboards_project_locked_objects_block_form_submit'),
-    );
+      '#submit' => ['cwrc_dashboards_project_locked_objects_block_form_submit'],
+    ];
   }
 
   // Return render array.
@@ -983,12 +1004,12 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
   $query = $client->createSelect();
   $helper = $query->getHelper();
   $query->setQuery('RELS_EXT_locked-by_literal_s:' . $user->name . ' AND RELS_EXT_lock-expiry_literal_s:[* TO *]')
-    ->setFields(array(
+    ->setFields([
       "PID",
       "fgs_label_s",
       "RELS_EXT_locked-by_literal_s",
       "RELS_EXT_lock-expiry_literal_s",
-    ))
+    ])
     ->addSort('workflow_date_current_dt', $query::SORT_DESC)
     ->setRows(100);
 
@@ -996,27 +1017,27 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
   $results = $client->select($query);
 
   // Build table select form element.
-  $form['objects'] = array(
+  $form['objects'] = [
     '#type' => 'tableselect',
-    '#options' => array(),
+    '#options' => [],
     '#empty' => t('You have no locked objects.'),
-    '#header' => array(
+    '#header' => [
       'object' => t('Object'),
       'expiry' => t('Expiry'),
-    ),
+    ],
     // Add class flagging this as a "read more" candidate.
-    '#attributes' => array(
-      'class' => array(
+    '#attributes' => [
+      'class' => [
         'read-more',
-      ),
-    ),
-    '#attached' => array(
-      'js' => array(
+      ],
+    ],
+    '#attached' => [
+      'js' => [
         drupal_get_path('module', 'cwrc_dashboards') . '/js/read-more.js',
-      ),
-    )
+      ],
+    ],
 
-  );
+  ];
 
   // // Fill rows with objects.
   foreach ($results as $document) {
@@ -1024,32 +1045,36 @@ function cwrc_dashboards_user_locked_objects_block_form($form, &$form_state) {
     // Load the full object to check lock status.
     $object = islandora_object_load($document['PID']);
     if ($object != NULL && $object != FALSE) {
-    if (islandora_object_lock_is_locked($object)
-      && isset($document['RELS_EXT_locked-by_literal_s'])) {
+      if (islandora_object_lock_is_locked($object)
+        && isset($document['RELS_EXT_locked-by_literal_s'])) {
 
-      $time = strtotime($document['RELS_EXT_lock-expiry_literal_s']);
-      if ($time != NULL && $time != FALSE) {
-        $date = format_date(intval($time), 'medium', '', TIMEZONE_OFFSET);
-      }
-      else {
-        $date = "";
-      }
+        $time = strtotime($document['RELS_EXT_lock-expiry_literal_s']);
+        if ($time != NULL && $time != FALSE) {
+          $date = format_date(intval($time), 'medium', '', TIMEZONE_OFFSET);
+        }
+        else {
+          $date = "";
+        }
 
-      $form['objects']['#options'][$document['PID']] = array(
-        'object' => l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
-        'expiry' => $date,
-      );
-    }} else { watchdog('bradmodule', '<pre>Dumping @variable </pre>', array('@variable' => print_r($document['PID'], true)));
-  }}
+        $form['objects']['#options'][$document['PID']] = [
+          'object' => l($document['fgs_label_s'], 'islandora/object/' . $document['PID']),
+          'expiry' => $date,
+        ];
+      }
+    }
+    else {
+      watchdog('bradmodule', '<pre>Dumping @variable </pre>', ['@variable' => print_r($document['PID'], TRUE)]);
+    }
+  }
 
   // Submit button (only if there are rows).
   if (count($form['objects']['#options']) > 0) {
-    $form['submit'] = array(
+    $form['submit'] = [
       '#type' => 'submit',
       '#executes_submit_callback' => TRUE,
       '#value' => t('Release selected locks'),
-      '#submit' => array('cwrc_dashboards_project_locked_objects_block_form_submit'),
-    );
+      '#submit' => ['cwrc_dashboards_project_locked_objects_block_form_submit'],
+    ];
   }
 
   // Return render array.
